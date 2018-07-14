@@ -106,7 +106,8 @@ ALU ALU(
         .src2_i(read_data_2_mux),
         .ctrl_i(alu_ctl),
         .result_o(write_data),
-        .zero_o(zero)
+        .zero_o(zero),
+        .shamt_i(instr[10:6])
         );
 
 wire [31:0] shifted;

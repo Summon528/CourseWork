@@ -57,20 +57,45 @@ always @(*) begin
     end
 
     6'b001_011: begin
-	  RegWrite_o <= 1;
+	    RegWrite_o <= 1;
       ALU_op_o <= 3'b010;
       ALUSrc_o <= 1;
       RegDst_o <= 0;
       Branch_o <= 0;
-	end
+	  end
 
-	6'b000_100: begin
-	  RegWrite_o <= 0;
+	  6'b000_100: begin
+	    RegWrite_o <= 0;
       ALU_op_o <= 3'b011;
       ALUSrc_o <= 0;
       RegDst_o <= 0; //doesnt matter
       Branch_o <= 1;
-	end
+	  end
+
+    6'b001_111: begin
+      RegWrite_o <= 1;
+      ALU_op_o <= 3'b100;
+      ALUSrc_o <= 1;
+      RegDst_o <= 0;
+      Branch_o <= 0;
+    end
+
+    6'b001_101: begin
+      RegWrite_o <= 1;
+      ALU_op_o <= 3'b101;
+      ALUSrc_o <= 1;
+      RegDst_o <= 0;
+      Branch_o <= 0;
+    end
+
+    6'b000101: begin
+	    RegWrite_o <= 0;
+      ALU_op_o <= 3'b110;
+      ALUSrc_o <= 0;
+      RegDst_o <= 0; //doesnt matter
+      Branch_o <= 1;
+	  end
+
   endcase
 end
 endmodule
