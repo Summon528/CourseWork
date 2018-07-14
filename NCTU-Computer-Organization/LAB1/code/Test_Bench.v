@@ -2,14 +2,14 @@
 //--------------------------------------------------------------------------------
 //Version:     1
 //--------------------------------------------------------------------------------
-//Writer:      
+//Writer:      0611262 曾長彥
 //----------------------------------------------
-//Date:        
+//Date:        2018/07/14
 //----------------------------------------------
-//Description: 
+//Description:
 //--------------------------------------------------------------------------------
 
-`define CYCLE_TIME 10			
+`define CYCLE_TIME 10
 `define END_COUNT 25
 module TestBench;
 
@@ -19,20 +19,20 @@ reg         RST;
 integer     count;
 integer     handle;
 integer     end_count;
-//Greate tested modle  
+//Greate tested modle
 Simple_Single_CPU cpu(
         .clk_i(CLK),
 		.rst_i(RST)
 		);
- 
+
 //Main function
 
-always #(`CYCLE_TIME/2) CLK = ~CLK;	
+always #(`CYCLE_TIME/2) CLK = ~CLK;
 
 initial  begin
 	$dumpfile("Single_Cycle_CPU.vcd");
   	$dumpvars;
-    
+
     handle = $fopen("CO_P1_Result.txt");
 	CLK = 0;
     RST = 0;
@@ -45,14 +45,14 @@ end
 //Print result to "CO_P2_Result.txt"
 always@(posedge CLK) begin
     count = count + 1;
-	if( count == `END_COUNT ) begin 
+	if( count == `END_COUNT ) begin
     $fdisplay(handle, "r0=%d\nr1=%d\nr2=%d\nr3=%d\nr4=%d\nr5=%d\nr6=%d\nr7=%d\nr8=%d\nr9=%d\nr10=%d\nr11=%d\nr12=%d",
-	          cpu.RF.Reg_File[0], cpu.RF.Reg_File[1], cpu.RF.Reg_File[2], cpu.RF.Reg_File[3], cpu.RF.Reg_File[4], 
-			  cpu.RF.Reg_File[5], cpu.RF.Reg_File[6], cpu.RF.Reg_File[7], cpu.RF.Reg_File[8], cpu.RF.Reg_File[9], 
+	          cpu.RF.Reg_File[0], cpu.RF.Reg_File[1], cpu.RF.Reg_File[2], cpu.RF.Reg_File[3], cpu.RF.Reg_File[4],
+			  cpu.RF.Reg_File[5], cpu.RF.Reg_File[6], cpu.RF.Reg_File[7], cpu.RF.Reg_File[8], cpu.RF.Reg_File[9],
 			  cpu.RF.Reg_File[10],cpu.RF.Reg_File[11], cpu.RF.Reg_File[12]
 			  );
 	end
 	else ;
 end
-  
+
 endmodule

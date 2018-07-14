@@ -2,20 +2,20 @@
 //--------------------------------------------------------------------------------
 //Version:     1
 //--------------------------------------------------------------------------------
-//Writer:
+//Writer:      0611262 曾長彥
 //----------------------------------------------
-//Date:
+//Date:        2018/07/14
 //----------------------------------------------
 //Description:
 //--------------------------------------------------------------------------------
 
 module Decoder(
     instr_op_i,
-  RegWrite_o,
-  ALU_op_o,
-  ALUSrc_o,
-  RegDst_o,
-  Branch_o
+    RegWrite_o,
+    ALU_op_o,
+    ALUSrc_o,
+    RegDst_o,
+    Branch_o
   );
 
 //I/O ports
@@ -40,7 +40,7 @@ reg            Branch_o;
 //Main function
 always @(*) begin
   case (instr_op_i)
-    6'b000_000: begin
+    6'b000_000: begin //r type
       RegWrite_o <= 1;
       ALU_op_o <= 3'b000;
       ALUSrc_o <= 0;
@@ -48,7 +48,7 @@ always @(*) begin
       Branch_o <= 0;
     end
 
-    6'b001_000: begin
+    6'b001_000: begin //addi
       RegWrite_o <= 1;
       ALU_op_o <= 3'b001;
       ALUSrc_o <= 1;
@@ -56,7 +56,7 @@ always @(*) begin
       Branch_o <= 0;
     end
 
-    6'b001_011: begin
+    6'b001_011: begin //sltiu
 	    RegWrite_o <= 1;
       ALU_op_o <= 3'b010;
       ALUSrc_o <= 1;
@@ -64,15 +64,15 @@ always @(*) begin
       Branch_o <= 0;
 	  end
 
-	  6'b000_100: begin
+	  6'b000_100: begin //beq
 	    RegWrite_o <= 0;
       ALU_op_o <= 3'b011;
       ALUSrc_o <= 0;
-      RegDst_o <= 0; //doesnt matter
+      RegDst_o <= 0;
       Branch_o <= 1;
 	  end
 
-    6'b001_111: begin
+    6'b001_111: begin //lui
       RegWrite_o <= 1;
       ALU_op_o <= 3'b100;
       ALUSrc_o <= 1;
@@ -80,7 +80,7 @@ always @(*) begin
       Branch_o <= 0;
     end
 
-    6'b001_101: begin
+    6'b001_101: begin //ori
       RegWrite_o <= 1;
       ALU_op_o <= 3'b101;
       ALUSrc_o <= 1;
@@ -88,13 +88,21 @@ always @(*) begin
       Branch_o <= 0;
     end
 
-    6'b000101: begin
+    6'b000101: begin //bne
 	    RegWrite_o <= 0;
       ALU_op_o <= 3'b110;
       ALUSrc_o <= 0;
-      RegDst_o <= 0; //doesnt matter
+      RegDst_o <= 0;
       Branch_o <= 1;
 	  end
+
+    default: begin
+      RegWrite_o <= 0;
+      ALU_op_o <= 3'b000;
+      ALUSrc_o <= 0;
+      RegDst_o <= 0;
+      Branch_o <= 0;
+    end
 
   endcase
 end

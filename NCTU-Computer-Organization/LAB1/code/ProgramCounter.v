@@ -2,11 +2,11 @@
 //--------------------------------------------------------------------------------
 //Version:     1
 //--------------------------------------------------------------------------------
-//Writer:      
+//Writer:      0611262 曾長彥
 //----------------------------------------------
-//Date:        
+//Date:        2018/07/14
 //----------------------------------------------
-//Description: 
+//Description:
 //--------------------------------------------------------------------------------
 
 module ProgramCounter(
@@ -15,19 +15,19 @@ module ProgramCounter(
 	pc_in_i,
 	pc_out_o
 	);
-     
+
 //I/O ports
 input           clk_i;
 input	        rst_i;
 input  [32-1:0] pc_in_i;
 output [32-1:0] pc_out_o;
- 
+
 //Internal Signals
 reg    [32-1:0] pc_out_o;
- 
+
 //Parameter
 
-    
+
 //Main function
 always @(posedge clk_i) begin
     if(~rst_i)
@@ -37,8 +37,3 @@ always @(posedge clk_i) begin
 end
 
 endmodule
-
-
-
-                    
-                    
