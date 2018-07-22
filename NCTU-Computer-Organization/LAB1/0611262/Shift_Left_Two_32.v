@@ -1,27 +1,22 @@
-//Subject:     CO project 1 - Sign extend
+//Subject:      CO project 1 - Shift_Left_Two_32
 //--------------------------------------------------------------------------------
 //Version:     1
 //--------------------------------------------------------------------------------
-//Writer:
+//Writer:      0611262 曾長彥
 //----------------------------------------------
-//Date:
-//----------------------------------------------
+//Date:        2018/07/14
 //Description:
 //--------------------------------------------------------------------------------
 
-module Sign_Extend(
+module Shift_Left_Two_32(
     data_i,
     data_o
     );
 
 //I/O ports
-input   [16-1:0] data_i;
-output  [32-1:0] data_o;
+input [32-1:0] data_i;
+output [32-1:0] data_o;
 
-//Internal Signals
-wire     [32-1:0] data_o;
-
-//Sign extended
-assign data_o[15:0] = data_i[15:0];
-assign data_o[31:16] = data_i[15] ? 16'hffff : 16'h0000;
+//shift left 2
+assign data_o = data_i << 2;
 endmodule
