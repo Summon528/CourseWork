@@ -88,7 +88,7 @@ always @(*) begin
       Branch_o <= 0;
     end
 
-    6'b000101: begin //bne
+    6'b000_101: begin //bne
 	    RegWrite_o <= 0;
       ALU_op_o <= 3'b110;
       ALUSrc_o <= 0;
