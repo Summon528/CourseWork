@@ -2,35 +2,37 @@
 //--------------------------------------------------------------------------------
 //Version:     1
 //--------------------------------------------------------------------------------
-//Writer:      
+//Writer:
 //----------------------------------------------
-//Date:        
+//Date:
 //----------------------------------------------
-//Description: 
+//Description:
 //--------------------------------------------------------------------------------
 
 `timescale 1ns / 1ps
-`define CYCLE_TIME 50			
+`define CYCLE_TIME 50
 
 module TestBench;
   reg Clk, Start;
  // reg [31:0] i;
 
   Simple_Single_CPU CPU(Clk,Start);
-  
+
   initial
   begin
+  	$dumpfile("Single_Cycle_CPU.vcd");
+  	$dumpvars;
     Clk = 0;
     Start = 0;
-    
+
     #(`CYCLE_TIME)
-    
+
     Start = 1;
-    #(`CYCLE_TIME*560)	
-    
+    #(`CYCLE_TIME*560)
+
   $finish;
   end
-  
+
   always@(posedge Clk) begin
   	$display("PC = %d", CPU.PC.pc_out_o);
     $display("Data Memory = %d, %d, %d, %d, %d, %d, %d, %d",CPU.Data_Memory.memory[0], CPU.Data_Memory.memory[1], CPU.Data_Memory.memory[2], CPU.Data_Memory.memory[3], CPU.Data_Memory.memory[4], CPU.Data_Memory.memory[5], CPU.Data_Memory.memory[6], CPU.Data_Memory.memory[7]);
@@ -44,7 +46,6 @@ module TestBench;
     $display("R24 =%d, R25 =%d, R26 =%d, R27 =%d, R28 =%d, R29 =%d, R30 =%d, R31 =%d", CPU.RF.Reg_File[24], CPU.RF.Reg_File[25], CPU.RF.Reg_File[26], CPU.RF.Reg_File[27], CPU.RF.Reg_File[28], CPU.RF.Reg_File[29], CPU.RF.Reg_File[30], CPU.RF.Reg_File[31]);
   end
 
-  always #(`CYCLE_TIME/2) Clk = ~Clk;	
-  
-endmodule
+  always #(`CYCLE_TIME/2) Clk = ~Clk;
 
+endmodule

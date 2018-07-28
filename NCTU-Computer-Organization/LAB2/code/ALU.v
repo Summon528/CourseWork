@@ -45,6 +45,7 @@ always @(*) begin
 	5: result_o <= src2_i << 16;
 	6: result_o <= src1_i - src2_i;
 	7: result_o <= src1_i < src2_i ? 1 : 0;
+	8: result_o <= src1_i * src2_i;
 	12: result_o <= ~(src1_i | src2_i);
 	default: result_o <= 0;
   endcase
