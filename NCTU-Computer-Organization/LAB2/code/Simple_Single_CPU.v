@@ -38,7 +38,7 @@ Adder Adder1(
 
 wire[31:0] instr;
 Instr_Memory IM(
-        .pc_addr_i(pc_out),
+        .addr_i(pc_out),
         .instr_o(instr)
         );
 
@@ -51,7 +51,7 @@ MUX_2to1 #(.size(5)) Mux_Write_Reg(
         .data_o(write_reg_1)
         );
 
-wire[31:0] write_data;
+wire[31:0] alu_result;
 wire reg_write;
 wire[31:0] read_data_1;
 wire[31:0] read_data_2;
@@ -61,7 +61,7 @@ Reg_File RF(
         .RSaddr_i(instr[25:21]),
         .RTaddr_i(instr[20:16]),
         .RDaddr_i(write_reg_1),
-        .RDdata_i(write_data),
+        .RDdata_i(alu_result),
         .RegWrite_i (reg_write),
         .RSdata_o(read_data_1),
         .RTdata_o(read_data_2)
@@ -70,13 +70,24 @@ Reg_File RF(
 wire[2:0] alu_op;
 wire alu_src;
 wire branch;
+wire[1:0] mem_to_reg;
+wire jump;
+wire mem_read;
+wire mem_write;
+wire[1:0] branch_type;
+
 Decoder Decoder(
         .instr_op_i(instr[31:26]),
         .RegWrite_o(reg_write),
         .ALU_op_o(alu_op),
         .ALUSrc_o(alu_src),
         .RegDst_o(reg_dst),
-        .Branch_o(branch)
+        .Branch_o(branch),
+        .MemToReg_o(mem_to_reg),
+        .Jump_o(jump),
+        .MemRead_o(mem_read),
+        .MemWrite_o(mem_write),
+        .BranchType_o(branch_type)
         );
 
 wire[3:0] alu_ctl;
@@ -105,17 +116,17 @@ ALU ALU(
         .src1_i(read_data_1),
         .src2_i(read_data_2_mux),
         .ctrl_i(alu_ctl),
-        .result_o(write_data),
+        .result_o(alu_result),
         .zero_o(zero),
         .shamt_i(instr[10:6])
         );
 
 wire [31:0] shifted;
-wire [31:0] pc_jumped;
+wire [31:0] pc_offsetted;
 Adder Adder2(
         .src1_i(pc_out_add),
         .src2_i(shifted),
-        .sum_o(pc_jumped)
+        .sum_o(pc_offsetted)
         );
 
 Shift_Left_Two_32 Shifter(
@@ -123,20 +134,47 @@ Shift_Left_Two_32 Shifter(
         .data_o(shifted)
         );
 
+wire branch_mux_o;
+wire [31:0] pc_mux_o;
 MUX_2to1 #(.size(32)) Mux_PC_Source(
         .data0_i(pc_out_add),
-        .data1_i(pc_jumped),
-        .select_i(zero & branch),
-        .data_o(pc_in)
-        );
+        .data1_i(pc_offsetted),
+        .select_i(branch_mux_o & branch),
+        .data_o(pc_mux_o)
+);
 
+wire [31:0] dm_out;
 Data_Memory  DM(
-        .clk_i(),
-	.addr_i(),
-	.data_i(),
-	.MemRead_i(),
-	.MemWrite_i(),
-	.data_o()
+        .clk_i(clk_i),
+	.addr_i(alu_result),
+	.data_i(read_data_2),
+	.MemRead_i(mem_read),
+	.MemWrite_i(mem_write),
+	.data_o(dm_out)
+);
+
+
+wire [31:0] j_shift_2;
+
+Shift_Left_Two_32 Shifter2(
+        .data_i({6'b000000, instr[25:0]}),
+        .data_o(j_shift_2)
+);
+
+MUX_2to1 #(.size(32)) Mux_PC_Source2(
+        .data0_i({pc_out_add[31:27], j_shift_2[26:0]}),
+        .data1_i(pc_mux_o),
+        .select_i(jump),
+        .data_o(pc_in)
+);
+
+MUX_4to1 #(.size(1)) Mux_Branch_Type(
+        .data0_i(zero),
+        .data1_i(!zero),
+        .data2_i(zero),
+        .data3_i(zero),
+        .select_i(branch_type),
+        .data_o(branch_mux_o)
 );
 
 endmodule

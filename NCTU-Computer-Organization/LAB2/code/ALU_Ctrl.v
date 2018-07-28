@@ -47,7 +47,7 @@ always @(*) begin
     3'b011: ALUCtrl_o <= 4'b0110;  //beq
     3'b100: ALUCtrl_o <= 4'b0101;  //lui
     3'b101: ALUCtrl_o <= 4'b0001;  //ori
-    3'b110: ALUCtrl_o <= 4'b1000;  //bne
+    // 3'b110: ALUCtrl_o <= 4'b1000;  //bne
     default: ALUCtrl_o <= 4'b0000;
   endcase
 end
