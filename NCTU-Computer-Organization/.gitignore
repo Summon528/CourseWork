@@ -6,3 +6,5 @@
 .DS_store
 *Result.txt
 *.vcd
+*.exe
+*.out

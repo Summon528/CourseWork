@@ -12,17 +12,11 @@ struct cache_content {
     uint32_t tag;
 };
 
-inline int log2(int n) {
-    int l = 0;
-    while (n >>= 1) l++;
-    return l;
-}
-
 double simulate(int cache_size, int assoc, string file_name) {
     int offset_bit = 6;
-    int assoc_bit = log2(assoc);
+    int assoc_bit = __lg(assoc);
     int line = cache_size >> assoc_bit >> offset_bit;
-    int index_bit = log2(cache_size) - offset_bit - assoc_bit;
+    int index_bit = __lg(cache_size) - offset_bit - assoc_bit;
 
     vector<vector<cache_content>> cache(line, vector<cache_content>(assoc));
 
@@ -57,7 +51,6 @@ double simulate(int cache_size, int assoc, string file_name) {
                 if (i->vis > max) max_it = i, max = i->vis;
                 i->vis++;
             }
-
             max_it->vis = 0;
             max_it->v = true;
             max_it->tag = tag;

@@ -13,17 +13,11 @@ struct cache_content {
 
 const int K = 1024;
 
-inline int log2(int n) {
-    int l = 0;
-    while (n >>= 1) l++;
-    return l;
-}
-
 double simulate(int cache_size, int block_size, string file_name) {
     unsigned int tag, index, x;
 
-    int offset_bit = (int)log2(block_size);
-    int index_bit = (int)log2(cache_size / block_size);
+    int offset_bit = __lg(block_size);
+    int index_bit = __lg(cache_size / block_size);
     int line = cache_size >> (offset_bit);
 
     cache_content *cache = new cache_content[line];
