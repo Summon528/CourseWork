@@ -1,6 +1,7 @@
 *
 !*/
 !*.*
+!Makefile
 
 .DS_store
 *Result.txt
