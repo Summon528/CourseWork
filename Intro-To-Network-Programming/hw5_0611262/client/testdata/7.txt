@@ -1,0 +1,52 @@
+register 1 1
+register 2 2
+register 3 3
+register 4 4
+register 5 5
+register 6 6
+register 7 7
+register 8 8
+register 9 9
+register 10 10
+register 11 11
+register 12 12
+login 1 1
+login 2 2
+login 3 3
+login 4 4
+login 5 5
+login 6 6
+login 7 7
+login 8 8
+login 9 9
+login 10 10
+login 11 11
+login 12 12
+logout 1
+login 1 2
+invite 11 1
+list-invite 1
+login 1 1
+list-invite 1
+delete 8
+register 8 8
+login 8 8
+logout 1
+delete 2
+logout 3
+delete 4
+logout 5
+delete 6
+logout 7
+delete 8
+logout 9
+logout 11
+delete 10
+logout 12
+register 10 10
+login 10 10
+login 12 12
+invite 10 12
+list-invite 12
+logout 10
+delete 12
