@@ -1,0 +1,23 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "BuildFortran",
+            "type": "shell",
+            "command": "gfortran -DLOCAL -std=c++11 -g ${file} -o ${fileDirname}\\${fileBasenameNoExtension}.exe",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "FortranRun",
+            "type": "shell",
+            "command": "g++ -DLOCAL -std=c++11  \"${file}\" -o \"${fileDirname}\\${fileBasenameNoExtension}.exe\" && start cmd /c  \" \"C:\\Users\\CodyTseng\\AppData\\Roaming\\Code\\User\\Cpp.bat\" \"${fileDirname}\\${fileBasenameNoExtension}.exe\" && pause \" ",
+            "problemMatcher": "$gcc"
+        }
+    ]
+}
