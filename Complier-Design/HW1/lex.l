@@ -23,7 +23,7 @@ ID     [a-zA-Z][a-zA-Z0-9]*
 INT    0|[1-9][0-9]*
 FLOAT  [0-9]+\.[0-9]+
 SCI    [0-9]+(\.[0-9]+)?[Ee][+\-]?[0-9]+
-STRING \"([^"\\]|\\.)*\"
+STRING \"([^"\\\n]|\\.)*\"
 SPACE  (" "|\t)+
 C_COM  \/\/.*
 %Start PRAGMA_COMMENT
