@@ -1,0 +1,13 @@
+backup:
+- dataset: 'mypool/hidden'
+  enabled: false
+  rotation: 7
+  period: '3m'
+
+- dataset: 'mypool/upload'
+  rotation: 10
+  period: '5m'
+
+- dataset: 'mypool/public'
+  rotation: 4
+  period: '7m'

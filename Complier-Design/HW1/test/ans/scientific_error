@@ -1,0 +1,1 @@
+{"returncode": 1, "stderr": "Error at line 4: .\n", "stdout": "1:// pattern name: scientific_error\n\n2:\n\n3:// error case\n\n<sci:123E1>\n"}

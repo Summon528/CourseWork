@@ -1,0 +1,1 @@
+{"returncode": 1, "stderr": "Error at line 7: i\n", "stdout": "1:// pattern name: pragma_error3\n\n2:#pragma statistic off//comment OK\n\n3:#pragma statistic on/* comment OK */\n\n4:\n\n5:#pragma statistic off/* comment \n\n6:OK */\n\n"}

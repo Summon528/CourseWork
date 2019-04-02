@@ -1,0 +1,1 @@
+{"returncode": 0, "stderr": "", "stdout": "1:// pattern name: identifier\n\n2:#pragma statistic off\n\n<int:0>\n<id:aa>\n3:0aa\n\n<id:aa0>\n4:aa0\n\n5:\n\n<id:integerA>\n6:\tintegerA\n\n<id:integera>\n7: integera\n\n8:\n\n<id:floatbegin>\n9:floatbegin\n\n10:\n\n<id:whiledo>\n<kw:if>\n11:whiledo if\n\n12:\n\n<id:intege>\n<id:r>\n13:intege r\n\n<id:sdfsd>\n<id:a>\n14:sdfsd a\n\n"}

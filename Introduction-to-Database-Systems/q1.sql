@@ -1,0 +1,5 @@
+SELECT matchId, MAX(DBNOs)
+FROM player_statistic
+GROUP BY matchId
+ORDER BY MAX(DBNOs) DESC
+LIMIT 20;

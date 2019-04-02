@@ -1,0 +1,28 @@
+#!/bin/sh
+# PROVIDE: zbackupd
+# REQUIRE: LOGIN zfs
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+name=zbackupd
+rcvar=zbackupd_enable
+load_rc_config $name
+command="/usr/local/bin/zbackupd"
+extra_commands="reload list"
+procname="/usr/local/bin/python3"
+pidfile="/var/run/zbackup.pid"
+zbackupd_config=${zbackupd_config:="/usr/local/etc/zbackupd.yaml"}
+zbackupd_flags="-d -c '${zbackupd_config}'"
+list_cmd="/usr/local/bin/zbackup --list"
+sig_reload="USR1"
+start_precmd=check_config
+restart_precmd=check_config
+
+check_config() {
+    if [ ! -f "${zbackupd_config}" ]; then
+        echo "Error: config file does not exist"
+        exit 1
+    fi
+}
+
+run_rc_command "$1"
