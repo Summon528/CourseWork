@@ -1,0 +1,3 @@
+[submodule "Database/simple_dbms"]
+	path = Database/simple_dbms
+	url = git@gitlab.com:dbms_2019/0611262/simple_dbms.git
