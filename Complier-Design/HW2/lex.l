@@ -1,4 +1,5 @@
 %{
+#include "y.tab.h"
 #define MAX_LINE_LENGTH 256
 #define MAX_ID_LENGTH 256
 #define MAX_STRING_LENGTH 256
@@ -17,7 +18,8 @@ int cur_id = 0;
 %}
 
 DELIM  [,;()\[\]{}] 
-OP     [+\-*\/%]|<=?|!=?|>=?|==?|&&|\|\|
+OP     [+\-*\/%=!]
+REL_OP <=?|!=|>=?|==
 KW     while|do|if|else|true|false|for|int|print|const|read|boolean|bool|void|float|double|string|continue|break|return
 ID     [a-zA-Z][a-zA-Z0-9]*
 INT    0|[1-9][0-9]*
@@ -32,11 +34,32 @@ C_COM  \/\/.*
 %%
 
 <INITIAL>"/*"     LIST; BEGIN COMMENT;
-<INITIAL>{DELIM}  tokenString("delim", yytext); 
-<INITIAL>{OP}     tokenString("op", yytext);
-<INITIAL>{KW}     tokenString("kw", yytext);
+<INITIAL>{DELIM}  return *yytext;
+<INITIAL>{OP}     return *yytext;
+<INITIAL>{REL_OP} return REL_OP;
+<INITIAL>"&&"     return AND;
+<INITIAL>"||"     return OR;
+<INITIAL>while    return WHILE;
+<INITIAL>do       return DO;
+<INITIAL>if       return IF;
+<INITIAL>else     return ELSE;
+<INITIAL>true     return TRUE;
+<INITIAL>false    return FALSE;
+<INITIAL>for      return FOR;
+<INITIAL>int      return INT;
+<INITIAL>print    return PRINT;
+<INITIAL>const    return CONST;
+<INITIAL>read     return READ;
+<INITIAL>boolean  return BOOLEAN;
+<INITIAL>bool     return BOOL;
+<INITIAL>void     return VOID;
+<INITIAL>float    return FLOAT;
+<INITIAL>double   return DOUBLE;
+<INITIAL>string   return STRING;
+<INITIAL>continue return CONTINUE;
+<INITIAL>break    return BREAK;
+<INITIAL>return   return RETURN;
 <INITIAL>{ID}     {
-    tokenString("id", yytext);
     if (Opt_Statistic) {
         int i;
         for (i = 0; i < cur_id; i++) {
@@ -50,10 +73,11 @@ C_COM  \/\/.*
             id_cnt[cur_id++] = 1;
         }
     }
+    return ID;
 }
-<INITIAL>{INT}    tokenString("int", yytext);
-<INITIAL>{FLOAT}  tokenString("float", yytext);
-<INITIAL>{SCI}    tokenString("sci", yytext);
+<INITIAL>{INT}    return INT_NUM;
+<INITIAL>{FLOAT}  return FLOAT_NUM;
+<INITIAL>{SCI}    return SCI_NUM;
 <INITIAL>{STRING} {
     char token[yyleng];
     int t = 0, y = 1;
@@ -66,7 +90,7 @@ C_COM  \/\/.*
         token[t++] = yytext[y++];
     }
     token[t] = '\0';
-    tokenString("string", token);
+    return STRING;
 }
 <INITIAL>{C_COM}  LIST;
 <INITIAL>^#pragma{SPACE}source{SPACE}(on|off) {
@@ -109,35 +133,4 @@ C_COM  \/\/.*
 . { // Unrecognized character
     fprintf(stderr, "Error at line %d: %s\n", linenum, yytext);
     exit(1);
-}
-
-%%
-
-int main( int argc, char **argv )
-{
-    if (argc >= 2)
-    {
-        yyin = fopen( argv[1], "r" );
-        if ( NULL == yyin ) {
-            fprintf( stderr, "Cannot open: %s\n", argv[1] );
-            exit(-1);
-        }
-    }
-    else
-    {
-        yyin = stdin;
-    }
-
-    yylex();
-
-    if (Opt_Statistic)
-    {
-        printf("frequencies of identifiers:\n");
-        for (int i = 0; i < cur_id; i++) {
-            printf("%s\t%d\n", id_table[i], id_cnt[i]);
-        }
-        //format :  printf("%s\t%d\n");
-    }
-
-    exit(0);
 }

@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-lfl -ly
-TARGET=scanner
+TARGET=parser
 LEX=lex.yy.c
 YACC=y.tab.c
 YACC_HEADER=y.tab.h
