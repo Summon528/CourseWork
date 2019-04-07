@@ -54,11 +54,13 @@ non_empty_formal_arg_list : non_empty_formal_arg_list ',' formal_arg
 
 formal_arg : type ID
            | type ID brackets_int
-        ;
+           ;
 
-declarations : /* empty */
-             | declarations declaration
-             ;
+state_decl_list : state_decl_list declaration
+                | state_decl_list statement
+                | statement
+                | declaration
+                ;
 
 declaration : type var_decl_list ';'
             | CONST type const_decl_list ';'
@@ -82,10 +84,6 @@ brackets_int : '[' INT_NUM ']'
              | brackets_int '[' INT_NUM ']'
              ;
 
-statements : /* empty */
-           | statements statement
-           ;
-
 statement : compound_stat
           | simple_stat
           | if_stat
@@ -95,7 +93,7 @@ statement : compound_stat
           | func_invoke
           ;
 
-compound_stat : '{' declarations statements '}'
+compound_stat : '{' state_decl_list '}'
               ;
 
 simple_stat : var_ref '=' expr ';' 
