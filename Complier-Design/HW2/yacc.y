@@ -90,10 +90,11 @@ statement : compound_stat
           | while_stat
           | for_stat
           | jump_stat
-          | func_invoke
+          | func_invoke ';'
           ;
 
 compound_stat : '{' state_decl_list '}'
+              | '{' '}'
               ;
 
 simple_stat : var_ref '=' expr ';' 
@@ -109,40 +110,63 @@ while_stat : WHILE '(' expr ')' compound_stat
            | DO compound_stat WHILE '(' expr ')' ';'
            ;
 
-for_stat : FOR '(' expr_or_empty ';' expr_or_empty ';' expr_or_empty ')' compound_stat
+for_stat : FOR '(' for_expr ';' for_expr ';' for_expr ')' compound_stat
          ;
+
+for_expr : non_empty_for_expr
+         | /* empty */
+         ;
+
+non_empty_for_expr : var_ref '=' expr
+                   | expr
+                   | non_empty_for_expr ','  expr
+                   | non_empty_for_expr ',' var_ref '=' expr
+                   ;
 
 jump_stat : RETURN expr ';'
           | BREAK ';'
           | CONTINUE ';'
           ;
 
-func_invoke : ID '(' expr_list ')' ';';
+func_invoke : ID '(' expr_list ')'
+            ;
 
-expr_list : expr_list ',' expr
+
+expr_list : non_empty_expr_list
+          | /* empty */
+          ;
+
+non_empty_expr_list : expr_list ',' expr
           | expr
           ;
 
-expr_or_empty : expr
-              | /* empty */
-              ;
-
-expr : '-' expr %prec NEG
-     | expr '+' expr
-     | expr '-' expr
-     | expr '*' expr
-     | expr '/' expr
-     | expr '=' expr
-     | expr '%' expr
-     | expr AND expr
-     | expr OR expr
-     | expr REL_OP expr
-     | '!' expr
-     | '(' expr ')'
-     | func_invoke
-     | literal
-     | var_ref
+expr : expr AND expr_lv4
+     | expr OR expr_lv4
+     | expr_lv4
      ;
+
+expr_lv4 : '!' expr_lv4
+         | expr_lv3
+         ;
+
+expr_lv3 : expr_lv3 '*' expr_lv2
+         | expr_lv3 '/' expr_lv2
+         | expr_lv3 '%' expr_lv2
+         | expr_lv3 '+' expr_lv2
+         | expr_lv3 '-' expr_lv2
+         | expr_lv3 REL_OP expr_lv2
+         | expr_lv2
+         ;
+
+expr_lv2 : expr_lv1
+         | '-' expr_lv1
+         ;
+
+expr_lv1 : func_invoke
+         | literal
+         | var_ref
+         | '(' expr ')'
+         ;
 
 var_ref : ID brackets_expr
         | ID
