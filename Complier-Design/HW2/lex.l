@@ -34,31 +34,31 @@ C_COM  \/\/.*
 %%
 
 <INITIAL>"/*"     LIST; BEGIN COMMENT;
-<INITIAL>{DELIM}  return *yytext;
-<INITIAL>{OP}     return *yytext;
-<INITIAL>{REL_OP} return REL_OP;
-<INITIAL>"&&"     return AND;
-<INITIAL>"||"     return OR;
-<INITIAL>while    return WHILE;
-<INITIAL>do       return DO;
-<INITIAL>if       return IF;
-<INITIAL>else     return ELSE;
-<INITIAL>true     return TRUE;
-<INITIAL>false    return FALSE;
-<INITIAL>for      return FOR;
-<INITIAL>int      return INT;
-<INITIAL>print    return PRINT;
-<INITIAL>const    return CONST;
-<INITIAL>read     return READ;
-<INITIAL>boolean  return BOOLEAN;
-<INITIAL>bool     return BOOL;
-<INITIAL>void     return VOID;
-<INITIAL>float    return FLOAT;
-<INITIAL>double   return DOUBLE;
-<INITIAL>string   return STRING;
-<INITIAL>continue return CONTINUE;
-<INITIAL>break    return BREAK;
-<INITIAL>return   return RETURN;
+<INITIAL>{DELIM}  {tokenString("delim", yytext); return *yytext;}
+<INITIAL>{OP}     {tokenString("op", yytext); return *yytext;}
+<INITIAL>{REL_OP} {tokenString("op", yytext); return REL_OP;}
+<INITIAL>"&&"     {tokenString("op", yytext); return AND;}
+<INITIAL>"||"     {tokenString("op", yytext); return OR;}
+<INITIAL>while    {tokenString("kw", yytext); return WHILE;}
+<INITIAL>do       {tokenString("kw", yytext); return DO;}
+<INITIAL>if       {tokenString("kw", yytext); return IF;}
+<INITIAL>else     {tokenString("kw", yytext); return ELSE;}
+<INITIAL>true     {tokenString("kw", yytext); return TRUE;}
+<INITIAL>false    {tokenString("kw", yytext); return FALSE;}
+<INITIAL>for      {tokenString("kw", yytext); return FOR;}
+<INITIAL>int      {tokenString("kw", yytext); return INT;}
+<INITIAL>print    {tokenString("kw", yytext); return PRINT;}
+<INITIAL>const    {tokenString("kw", yytext); return CONST;}
+<INITIAL>read     {tokenString("kw", yytext); return READ;}
+<INITIAL>boolean  {tokenString("kw", yytext); return BOOLEAN;}
+<INITIAL>bool     {tokenString("kw", yytext); return BOOL;}
+<INITIAL>void     {tokenString("kw", yytext); return VOID;}
+<INITIAL>float    {tokenString("kw", yytext); return FLOAT;}
+<INITIAL>double   {tokenString("kw", yytext); return DOUBLE;}
+<INITIAL>string   {tokenString("kw", yytext); return STRING;}
+<INITIAL>continue {tokenString("kw", yytext); return CONTINUE;}
+<INITIAL>break    {tokenString("kw", yytext); return BREAK;}
+<INITIAL>return   {tokenString("kw", yytext); return RETURN;}
 <INITIAL>{ID}     {
     if (Opt_Statistic) {
         int i;
@@ -73,11 +73,12 @@ C_COM  \/\/.*
             id_cnt[cur_id++] = 1;
         }
     }
+    tokenString("id", yytext);
     return ID;
 }
-<INITIAL>{INT}    return INT_NUM;
-<INITIAL>{FLOAT}  return FLOAT_NUM;
-<INITIAL>{SCI}    return SCI_NUM;
+<INITIAL>{INT}    {tokenString("int", yytext); return INT_NUM;}
+<INITIAL>{FLOAT}  {tokenString("float", yytext); return FLOAT_NUM;}
+<INITIAL>{SCI}    {tokenString("sci", yytext); return SCI_NUM;}
 <INITIAL>{STRING} {
     char token[yyleng];
     int t = 0, y = 1;
@@ -90,6 +91,7 @@ C_COM  \/\/.*
         token[t++] = yytext[y++];
     }
     token[t] = '\0';
+    tokenString("string", token);
     return STRING;
 }
 <INITIAL>{C_COM}  LIST;
