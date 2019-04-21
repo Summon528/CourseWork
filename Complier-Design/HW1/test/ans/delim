@@ -1,1 +1,0 @@
-{"returncode": 0, "stderr": "", "stdout": "1:// pattern name: delim\n\n2:#pragma statistic off\n\n<delim:,>\n3:,\n\n<delim:;>\n4:;\n\n5:\n\n6:\n\n<delim:(>\n7:(\n\n<delim:)>\n8: )\n\n<delim:[>\n9:\t [\n\n<delim:]>\n10:\t\t]\n\n<delim:{>\n11: {\n\n<delim:}>\n12: }\n\n<delim:,>\n<delim:;>\n<delim:[>\n<delim:]>\n<delim:(>\n<delim:)>\n<delim:{>\n<delim:}>\n13:,;[](){}\n\n"}

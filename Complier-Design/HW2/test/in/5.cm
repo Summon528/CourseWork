@@ -1,7 +1,0 @@
-#pragma source off
-#pragma token off
-#pragma statistic off
-
-int a = 3;
-const double b = 7.234;
-int main();

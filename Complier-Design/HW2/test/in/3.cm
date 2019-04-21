@@ -1,8 +1,0 @@
-#pragma source off
-#pragma token off
-#pragma statistic off
-
-int main() {
-    int b = 1 --------------------------------- 10;
-    int a = -----------1;
-}
