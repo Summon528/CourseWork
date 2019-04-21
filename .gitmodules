@@ -1,6 +1,6 @@
-[submodule "Database/simple_dbms"]
-	path = Database/simple_dbms
-	url = git@gitlab.com:dbms_2019/0611262/simple_dbms.git
 [submodule "Complier-Design/NCTU-Compiler-Tester"]
 	path = Complier-Design/NCTU-Compiler-Tester
 	url = git@github.com:Summon528/NCTU-Compiler-Tester.git
+[submodule "Database/0611262_hw2"]
+	path = Database/0611262_hw2
+	url = git@gitlab.com:dbms_2019/0611262/0611262_hw2.git
