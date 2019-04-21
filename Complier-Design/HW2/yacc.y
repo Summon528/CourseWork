@@ -66,8 +66,8 @@ declaration : type var_decl_list ';'
             | CONST type const_decl_list ';'
             ;
 
-const_decl_list : const_decl_list ',' ID '=' expr
-                | ID '=' expr
+const_decl_list : const_decl_list ',' ID '=' literal
+                | ID '=' literal
                 ;
 
 var_decl_list : var_decl_list ',' var_decl
@@ -159,7 +159,7 @@ expr_lv3 : expr_lv3 '*' expr_lv2
          ;
 
 expr_lv2 : expr_lv1
-         | '-' expr_lv1
+         | '-' expr_lv2
          ;
 
 expr_lv1 : func_invoke
