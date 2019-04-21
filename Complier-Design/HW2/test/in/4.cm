@@ -1,7 +1,3 @@
 #pragma source off
 #pragma token off
 #pragma statistic off
-
-int b() {
-    int q = 0 + !0;
-}

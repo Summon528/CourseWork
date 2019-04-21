@@ -1,13 +1,13 @@
 #pragma source off
 #pragma token off
 #pragma statistic off
-int fun();
-void part1()
-{
-    //bool b, c;
-    int d;
-}
 
+int fun(); 
+void total()
+{
+
+    int b;
+}
 int fun()
 {
     return 10;

@@ -2,7 +2,7 @@
 #pragma token off
 #pragma statistic off
 
-void whilefor1()
+void whilefor()
 {
     bool a;
     while(a){

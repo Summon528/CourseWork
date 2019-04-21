@@ -6,7 +6,7 @@ bool func2(int e);
 int a = -1;
 int b[5] = {1,2,3,4,5};
 int c[5];
-void general1()
+void general()
 {
     int ii;
     for(i =10; i<15; i = i+1)
@@ -26,3 +26,4 @@ bool func2(int e)
 {
         return (e > 10);
 }
+

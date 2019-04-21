@@ -1,7 +1,7 @@
 #pragma source off
 #pragma token off
 #pragma statistic off
-void func1();
+void func();
 
 int a;
 
@@ -12,7 +12,7 @@ int fun()
 
 int d;
 
-void func1()
+void func()
 {
     int b;
 }
