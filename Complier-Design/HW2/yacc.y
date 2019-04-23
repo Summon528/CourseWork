@@ -66,9 +66,13 @@ declaration : type var_decl_list ';'
             | CONST type const_decl_list ';'
             ;
 
-const_decl_list : const_decl_list ',' ID '=' literal
-                | ID '=' literal
+const_decl_list : const_decl_list ',' ID '=' literal_can_neg
+                | ID '=' literal_can_neg
                 ;
+
+literal_can_neg : literal
+                 | '-' literal_can_neg
+                 ;
 
 var_decl_list : var_decl_list ',' var_decl
               | var_decl
@@ -140,31 +144,28 @@ non_empty_expr_list : expr_list ',' expr
           | expr
           ;
 
-expr : expr AND expr_lv4
-     | expr OR expr_lv4
-     | expr_lv4
+expr : expr AND expr_lv3
+     | expr OR expr_lv3
+     | expr_lv3
      ;
 
-expr_lv4 : '!' expr_lv4
-         | expr_lv3
-         ;
-
-expr_lv3 : expr_lv3 '*' expr_lv2
-         | expr_lv3 '/' expr_lv2
-         | expr_lv3 '%' expr_lv2
-         | expr_lv3 '+' expr_lv2
-         | expr_lv3 '-' expr_lv2
-         | expr_lv3 REL_OP expr_lv2
+expr_lv3 : '!' expr_lv3
          | expr_lv2
          ;
 
-expr_lv2 : expr_lv1
-         | '-' expr_lv2
+expr_lv2 : expr_lv2 '*' expr_lv1
+         | expr_lv2 '/' expr_lv1
+         | expr_lv2 '%' expr_lv1
+         | expr_lv2 '+' expr_lv1
+         | expr_lv2 '-' expr_lv1
+         | expr_lv2 REL_OP expr_lv1
+         | expr_lv1
          ;
 
 expr_lv1 : func_invoke
          | literal
          | var_ref
+         | '-' expr_lv1
          | '(' expr ')'
          ;
 
