@@ -1,11 +1,19 @@
 %{
 #include <stdio.h>
 #include <stdlib.h>
+#define MAX_ID_LENGTH 256
+#define MAX_ID_CNT 4096
 
 extern int linenum;             /* declared in lex.l */
 extern FILE *yyin;              /* declared by lex */
 extern char *yytext;            /* declared by lex */
 extern char buf[256];           /* declared in lex.l */
+extern int Opt_Statistic;
+extern char id_table[MAX_ID_CNT][MAX_ID_LENGTH + 1];
+extern int id_cnt[MAX_ID_CNT];
+extern int cur_id;
+int yylex();
+int yyerror(char *);
 %}
 
 %token WHILE DO IF ELSE TRUE FALSE FOR INT PRINT CONST READ BOOLEAN
@@ -224,5 +232,14 @@ int  main( int argc, char **argv )
     fprintf( stdout, "|--------------------------------|\n" );
     fprintf( stdout, "|  There is no syntactic error!  |\n" );
     fprintf( stdout, "|--------------------------------|\n" );
+
+    if (Opt_Statistic)
+    {
+        printf("frequencies of identifiers:\n");
+        for (int i = 0; i < cur_id; i++) {
+            printf("%s\t%d\n", id_table[i], id_cnt[i]);
+        }
+        //format :  printf("%s\t%d\n");
+    }
     exit(0);
 }
