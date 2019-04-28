@@ -1,35 +1,22 @@
+#pragma once
 #include <stdbool.h>
-#include <stdlib.h>
+#include "decl_list.h"
+#include "symbol_entry.h"
 
-typedef enum { function, parameter, variable, constant } Kind;
-typedef enum { _int, _float, _double, _bool, _string } Type;
-const char* KIND_STR[] = {"function", "parameter", "variable", "constant"};
-const char* TYPE_STR[] = {"int", "float", "double", "bool", "string"};
-
-typedef struct {
-    char name[40];
-    Kind kind;
-    Type type;
-    int arr_size;
-
-    int const_ival;
-    double const_dval;
-    float const_fval;
-    char const_sval[256];
-    bool const_bval;
-
-    Kind params[100];
-    int param_cnt;
-} SymbolEntry;
-
-typedef struct {
+typedef struct SymbolTable_t {
     int level;
-    SymbolEntry* entries[100];
+    SymbolEntry_t** entries;
     int entry_cnt;
-} SymbolTable;
+    int capacity;
+} SymbolTable_t;
 
-SymbolEntry* newSymbolEntry();
-SymbolTable* newSymbolTable();
+SymbolTable_t* newSymbolTable();
+void freeSymbolTable(SymbolTable_t* st);
 
-void printEntry(SymbolEntry* se, int level);
-void printTable(SymbolTable* st);
+void printTable(SymbolTable_t* st);
+void addConstEntry(SymbolTable_t* st, char* name, char* val, type_t type);
+SymbolEntry_t* addEntry(SymbolTable_t* st, char* name);
+void addVarEntry(SymbolTable_t* st, char* name, int arr_size, type_t type);
+void addConstFromList(SymbolTable_t* st, DeclList_t* dl, type_t type);
+void addVarFromList(SymbolTable_t* st, DeclList_t* dl, type_t type);
+SymbolEntry_t* findFromTable(SymbolTable_t* st, char* name);
