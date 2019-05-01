@@ -1,138 +1,416 @@
 %{
-#include "y.tab.h"
-#define MAX_LINE_LENGTH 256
-#define MAX_ID_LENGTH 256
-#define MAX_STRING_LENGTH 256
-#define MAX_ID_CNT 4096
-#define LIST                { strncat(buf, yytext, MAX_LINE_LENGTH); }
-#define tokenString(t, s)   { LIST; if (Opt_Token) printf("<%s:%s>\n", t, s); }
 
+#include "y.tab.h"
+
+#define LIST                strcat(buf, yytext)
+#define token(t)            {LIST; if (Opt_Token) printf("<%s>\n", #t);}
+#define tokenInteger(t, i)  {LIST; if (Opt_Token) printf("<%s:%d>\n", t, i);}
+#define tokenString(t, s)   {LIST; if (Opt_Token) printf("<%s:%s>\n", t, s);}
+#define MAX_LINE_LENG 256
+#define MAX_ID_LENG 256 
 int Opt_Source = 1;
 int Opt_Token = 1;
 int Opt_Statistic = 1;
 int linenum = 1;
-char buf[MAX_LINE_LENGTH+1];
-char id_table[MAX_ID_CNT][MAX_ID_LENGTH + 1] = {};
-int id_cnt[MAX_ID_CNT] = {};
-int cur_id = 0;
+char buf[MAX_LINE_LENG];
+char strContent[MAX_LINE_LENG];
+typedef struct ids{
+	char id_name[256];
+	int freq;
+	struct ids *next;
+} id;
+id *id_head;
+void set(id **, char *);
+id *new_id();
 %}
 
-DELIM  [,;()\[\]{}] 
-OP     [+\-*\/%=!]
-REL_OP <=?|!=|>=?|==
-KW     while|do|if|else|true|false|for|int|print|const|read|boolean|bool|void|float|double|string|continue|break|return
-ID     [a-zA-Z][a-zA-Z0-9]*
-INT    0|[1-9][0-9]*
-FLOAT  [0-9]+\.[0-9]+
-SCI    [0-9]+(\.[0-9]+)?[Ee][+\-]?[0-9]+
-STRING \"([^"\\\n]|\\.)*\"
-SPACE  (" "|\t)+
-C_COM  \/\/.*
-%Start PRAGMA_COMMENT
-%Start COMMENT
-%Start PRAGMA_END
+%x PRAGMA
+%x SOURCE
+%x TOKEN
+%x STATISTIC
+%x OTHER
+%x STR
+%x STR_ESCAPE
+%x COMMENT
+
 %%
+<INITIAL>[\t ]+	{
+		LIST;
+	}
+"#pragma"	{
+		LIST;
+		BEGIN PRAGMA;
+	}
+<PRAGMA>"source"	{
+		LIST;
+		BEGIN SOURCE;
+	}
+<PRAGMA>"token"	{
+		LIST;
+		BEGIN TOKEN;
+	}
+<PRAGMA>"statistic"	{
+		LIST;
+		BEGIN STATISTIC;
+	}
 
-<INITIAL>"/*"     LIST; BEGIN COMMENT;
-<INITIAL>{DELIM}  {tokenString("delim", yytext); return *yytext;}
-<INITIAL>{OP}     {tokenString("op", yytext); return *yytext;}
-<INITIAL>{REL_OP} {tokenString("op", yytext); return REL_OP;}
-<INITIAL>"&&"     {tokenString("op", yytext); return AND;}
-<INITIAL>"||"     {tokenString("op", yytext); return OR;}
-<INITIAL>while    {tokenString("kw", yytext); return WHILE;}
-<INITIAL>do       {tokenString("kw", yytext); return DO;}
-<INITIAL>if       {tokenString("kw", yytext); return IF;}
-<INITIAL>else     {tokenString("kw", yytext); return ELSE;}
-<INITIAL>true     {tokenString("kw", yytext); return TRUE;}
-<INITIAL>false    {tokenString("kw", yytext); return FALSE;}
-<INITIAL>for      {tokenString("kw", yytext); return FOR;}
-<INITIAL>int      {tokenString("kw", yytext); return INT;}
-<INITIAL>print    {tokenString("kw", yytext); return PRINT;}
-<INITIAL>const    {tokenString("kw", yytext); return CONST;}
-<INITIAL>read     {tokenString("kw", yytext); return READ;}
-<INITIAL>boolean  {tokenString("kw", yytext); return BOOLEAN;}
-<INITIAL>bool     {tokenString("kw", yytext); return BOOL;}
-<INITIAL>void     {tokenString("kw", yytext); return VOID;}
-<INITIAL>float    {tokenString("kw", yytext); return FLOAT;}
-<INITIAL>double   {tokenString("kw", yytext); return DOUBLE;}
-<INITIAL>string   {tokenString("kw", yytext); return STRING;}
-<INITIAL>continue {tokenString("kw", yytext); return CONTINUE;}
-<INITIAL>break    {tokenString("kw", yytext); return BREAK;}
-<INITIAL>return   {tokenString("kw", yytext); return RETURN;}
-<INITIAL>{ID}     {
-    if (Opt_Statistic) {
-        int i;
-        for (i = 0; i < cur_id; i++) {
-            if (strcmp(yytext, id_table[i]) == 0) {
-                id_cnt[i]++;
-                break;
-            }
+<SOURCE>"on"	{
+		LIST;
+		Opt_Source = 1;
+		BEGIN OTHER;
+	}
+<SOURCE>"off"	{
+		LIST;
+		Opt_Source = 0;
+		BEGIN OTHER;
+	}
+<SOURCE>[\t ]+	{
+		LIST;
+	}
+<SOURCE>.	{
+		printf("Error at line %d: %s\n",linenum, yytext);
+        exit(0);
+	}
+<TOKEN>"on"	{
+		LIST;
+		Opt_Token = 1;
+		BEGIN OTHER;
+	}
+<TOKEN>"off"	{
+		LIST;
+		Opt_Token = 0;
+		BEGIN OTHER;
+	}
+<TOKEN>[\t ]+	{
+		LIST;
+	}
+<TOKEN>.	{
+		printf("Error at token line %d: %s\n",linenum, yytext);
+        exit(0);
+	}
+<STATISTIC>"on"	{
+		LIST;
+		Opt_Statistic = 1;
+		BEGIN OTHER;
+	}
+<STATISTIC>"off"	{
+		LIST;
+		Opt_Statistic = 0;
+		BEGIN OTHER;
+	}
+<STATISTIC>[\t ]+	{
+		LIST;
+	}
+<STATISTIC>.	{
+		printf("Error at line %d: %s\n",linenum, yytext);
+        exit(0);
+	}
+<OTHER>"[\t ]*"	{
+		LIST;
+	}
+<OTHER>\/\/.*	{
+		LIST;
+		BEGIN INITIAL;
+	}
+<OTHER>"/*"	{
+		LIST;
+		BEGIN COMMENT;
+	}
+
+<OTHER>\n		{
+		LIST;
+  	      if (Opt_Source)
+  	        printf("%d:%s\n", linenum, buf);
+  	      linenum++;
+  	      buf[0] = '\0';
+		  BEGIN INITIAL;
+	}
+<OTHER>[^ \t\n]		{
+		printf("Error at line %d: %s\n",linenum, yytext);
+                exit(0);
+
+	}
+<PRAGMA>[\t ]+		{
+		LIST;
+	}
+<PRAGMA>.		{
+		printf("Error at pragma line %d: %s\n",linenum, yytext);
+                exit(0);
+
+	}
+"("	{
+		tokenString("delim", "(");	return L_PAREN;
+	}
+")"	{
+		tokenString("delim", ")");	return R_PAREN;
+	}
+","	{
+		tokenString("delim", ",");	return COMMA;
+	}
+";"	{
+		tokenString("delim", ";");	return SEMICOLON;
+	}
+"["	{
+		tokenString("delim", "["); 	return ML_BRACE;
+	}
+"]"	{
+		tokenString("delim", "]");	return MR_BRACE;
+	}
+"{"	{
+		tokenString("delim", "{");	return L_BRACE;
+	}
+"}"	{
+		tokenString("delim", "}");	return R_BRACE;
+	}
+"+"	{
+		token("+");	return ADD_OP;
+	}
+"-"	{
+		token("-");	return SUB_OP;
+	}
+"*"	{
+		token("*");	return MUL_OP;
+	}
+"/"	{
+		token("/");	return DIV_OP;
+	}
+"%"	{
+		token("%");	return MOD_OP;
+	}
+"="	{
+		token("="); return ASSIGN_OP;
+	}
+"<"	{
+		token("<");	return LT_OP;
+	}
+"<="	{
+		token("<=");	return LE_OP;
+	}
+"!="	{
+		token("!=");	return NE_OP;
+	}
+">="	{
+		token(">=");	return GE_OP;
+	}
+">"	{
+		token(">");	return	GT_OP;
+	}
+"=="	{
+		token("==");	return EQ_OP;
+	}
+"&&"	{
+		token("&&");	return AND_OP;
+	}
+"||"	{
+		token("||");	return OR_OP;
+	}
+"!"	{
+		token("!");	return NOT_OP;
+	}
+"read"	{tokenString("kw", yytext);	return READ;}
+
+"boolean"	{tokenString("kw", yytext);	return BOOLEAN;}
+
+"while"	{tokenString("kw", yytext);	return WHILE;}
+
+"do"	{tokenString("kw", yytext);	return DO;}
+
+"if"	{tokenString("kw", yytext);	return IF;}
+
+"else"	{tokenString("kw", yytext);	return ELSE;}
+
+"true"	{tokenString("kw", yytext);	return TRUE;}
+
+"false"	{tokenString("kw", yytext);	return FALSE;}
+
+"for"	{tokenString("kw", yytext);	return FOR;}
+
+"int"	{tokenString("kw", yytext);	return INT;}
+
+"print"	{tokenString("kw", yytext);	return PRINT;}
+
+"bool"	{tokenString("kw", yytext);	return BOOL;}
+
+"void"	{tokenString("kw", yytext);	return VOID;}
+
+"float"	{tokenString("kw", yytext);	return FLOAT;}
+
+"double"	{tokenString("kw", yytext);	return DOUBLE;}
+
+"string"	{tokenString("kw", yytext);	return STRING;}
+
+"continue"	{tokenString("kw", yytext);	return CONTINUE;}
+
+"break"	{tokenString("kw", yytext);	return BREAK;}
+
+"return"	{tokenString("kw", yytext);	return RETURN;}
+
+"const"		{tokenString("kw", yytext);	return CONST;}
+	
+0 |
+[1-9][0-9]* {
+		tokenString("int", yytext);	return INT_CONST;
+	}
+[0-9]+\.[0-9]+	{
+		tokenString("float", yytext);	return FLOAT_CONST;
+	}
+
+([0-9]+(\.[0-9]+)?)([eE][-+]?[0-9]+)	{
+		tokenString("sci", yytext);	return SCIENTIFIC;
+	}
+"\""	{ 
+		LIST;
+		memset(strContent, 0, MAX_LINE_LENG);
+		BEGIN STR;
+	}
+<STR>"\\"	{
+		LIST;
+		BEGIN STR_ESCAPE;
+	}
+<STR_ESCAPE>\"	{
+		LIST;
+		strcat (strContent, "\"");
+		BEGIN STR;
+	}
+<STR_ESCAPE>n	{
+		LIST;
+		strcat( strContent, "\n");
+		BEGIN STR;
+	}
+<STR_ESCAPE>t	{
+		LIST;
+		strcat( strContent, "\t");
+		BEGIN STR;
+	}
+<STR_ESCAPE>\\	{
+		LIST;
+		strcat( strContent, "\\");
+		BEGIN STR;
+	}
+<STR_ESCAPE>[^\"nt\\]	{
+		LIST;
+		strcat( strContent, "\\");
+		strcat( strContent, yytext);
+		BEGIN STR;
+	}
+<STR>"\n"	{
+		printf("Error at line %d: newline\n", linenum);
+		exit(0);
+	}
+
+<STR>\"	{
+		//LIST;
+		//strcat( buf, "\"");
+		if( Opt_Token)
+			tokenString("string", strContent);
+		BEGIN INITIAL;
+		return STR_CONST;
+	}
+<STR>[^\\\n\"]	{
+		LIST;
+		strcat( strContent, yytext);
+	}
+
+"/*"	{
+		LIST;
+		BEGIN COMMENT;
+	}
+<COMMENT>"\n"	{
+		LIST;
+		if (Opt_Source)
+  	        	printf("%d:%s\n", linenum, buf);
+		linenum++;
+		memset( buf, 0, MAX_LINE_LENG );
+	}
+
+			
+<COMMENT>.	{
+		LIST;
+	}
+<COMMENT>"*/"	{
+		LIST;
+		BEGIN INITIAL;
+	}
+\/\/.*	{
+		LIST;
+	}
+\n	{
+  	      LIST;
+  	      if (Opt_Source)
+  	        printf("%d:%s\n", linenum, buf);
+  	      linenum++;
+  	      buf[0] = '\0';
         }
-        if (i == cur_id) {
-            strncpy(id_table[cur_id], yytext, MAX_ID_LENGTH + 1);
-            id_cnt[cur_id++] = 1;
-        }
-    }
-    tokenString("id", yytext);
-    return ID;
-}
-<INITIAL>{INT}    {tokenString("int", yytext); return INT_NUM;}
-<INITIAL>{FLOAT}  {tokenString("float", yytext); return FLOAT_NUM;}
-<INITIAL>{SCI}    {tokenString("sci", yytext); return SCI_NUM;}
-<INITIAL>{STRING} {
-    char token[yyleng];
-    int t = 0, y = 1;
-    while (y < yyleng - 1) {
-        if (yytext[y] == '\\' && (yytext[y + 1] == '\\' || yytext[y + 1] == '"')) {
-            token[t++] = yytext[++y];
-            y++;
-            continue;
-        }
-        token[t++] = yytext[y++];
-    }
-    token[t] = '\0';
-    tokenString("string", token);
-    return STRING;
-}
-<INITIAL>{C_COM}  LIST;
-<INITIAL>^#pragma{SPACE}source{SPACE}(on|off) {
-    LIST;
-    Opt_Source = yytext[yyleng - 1] == 'n';
-    BEGIN PRAGMA_END;
-}
-<INITIAL>^#pragma{SPACE}statistic{SPACE}(on|off) {
-    LIST;
-    Opt_Statistic = yytext[yyleng - 1] == 'n';
-    BEGIN PRAGMA_END;
-}
-<INITIAL>^#pragma{SPACE}token{SPACE}(on|off) {
-    LIST;
-    Opt_Token = yytext[yyleng - 1] == 'n';
-    BEGIN PRAGMA_END;
-}
 
-<COMMENT>"*/"        LIST; BEGIN INITIAL;
-<COMMENT>.           LIST;
- 
-<PRAGMA_END>"/*"     LIST; BEGIN PRAGMA_COMMENT;
-<PRAGMA_END>\n       BEGIN INITIAL; REJECT;
-<PRAGMA_END>{C_COM}  LIST;
+[a-zA-Z_][a-zA-Z0-9_]{0,255}	{
+		if(Opt_Statistic){
+			set(&id_head,yytext);
+		}
+		tokenString("id",yytext);	return ID;
+	}
+.	{
+		printf("Error at line %d: %s\n",linenum, yytext);
+		exit(0);
+	}
+%%
+/*
+int main( int argc, char **argv )
+{
+	if( argc != 2 ) {
+	  	fprintf( stderr, "Usage: ./scanner [filename]\n" );
+   		exit(0);
+ 	}
+  
+  	FILE *fp = fopen( argv[1], "r" );
+  	if( fp == NULL ) {
+    		fprintf( stderr, "Open file error\n" );
+    		exit(-1);
+  	}
+	
+  	yyin = fp;
+  	id_head = NULL;
+	yylex();
+	
+  	if(Opt_Statistic){
+		id *offset = id_head;
+  		while(offset){
+    			printf("%s\t%d\n",offset->id_name, offset->freq);
+    			offset = offset->next;
+  		}
+	}
 
-<PRAGMA_COMMENT>"*/" LIST; BEGIN PRAGMA_END;
-<PRAGMA_COMMENT>\n   BEGIN COMMENT; REJECT;
-<PRAGMA_COMMENT>.    LIST;
-
-{SPACE}     LIST;
-
-\n {
-    LIST;
-    if (Opt_Source)
-        printf("%d:%s\n", linenum, buf);
-    ++linenum;
-    buf[0] = '\0';
+  	exit(0);
 }
-
-. { // Unrecognized character
-    fprintf(stderr, "Error at line %d: %s\n", linenum, yytext);
-    exit(1);
+*/
+void set(id **head, char *yytext)
+{
+	id *offset = *head;
+	id *prev = NULL;	
+	if(offset == NULL){
+		*head = new_id();
+		strncpy((*head)->id_name, yytext,strlen(yytext));
+		(*head)->freq = 1;
+	}else{
+		while(offset){
+			if(!strncmp(offset->id_name, yytext, (strlen(yytext)>=strlen(offset->id_name)?strlen(yytext):strlen(offset->id_name)))){
+				offset->freq+=1;
+				break;
+			}
+			prev = offset;
+			offset = offset -> next;
+		}
+		if(!offset){
+			prev->next = new_id();
+			strncpy(prev->next->id_name, yytext, strlen(yytext));
+			prev->next->freq+=1;
+		}
+	}
+}
+id *new_id()
+{
+	id *temp = (id *)malloc(sizeof(id));
+	temp->next = NULL;
+	memset(temp->id_name, 0, 256);
+	temp->freq = 0;
+	return temp;
 }

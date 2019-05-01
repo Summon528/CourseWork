@@ -1,20 +1,30 @@
-CC=gcc
-CFLAGS=-lfl -ly
-TARGET=parser
-LEX=lex.yy.c
-YACC=y.tab.c
-YACC_HEADER=y.tab.h
+TARGET = parser
+OBJECT = lex.yy.c y.tab.c y.tab.o lex.yy.o y.output parser y.tab.h main.o
+CC = gcc -g
+LEX = flex
+YACC = yacc -v
+YACCFLAG = -d
+LIBS = -lfl
 
 all: $(TARGET)
 
-$(TARGET): $(LEX) $(YACC) $(YACC_HEADER)
-	$(CC) $(LEX) $(YACC) -o $(TARGET) $(CFLAGS)
+parser: y.tab.o lex.yy.o main.o
+	$(CC) -o $(TARGET) y.tab.o lex.yy.o main.o $(LIBS)
 
-$(LEX): lex.l
-	flex lex.l
+y.tab.o: y.tab.c
+	$(CC) -c y.tab.c
 
-$(YACC) $(YACC_HEADER): yacc.y
-	yacc -d yacc.y
+y.tab.c: parser.y
+	$(YACC) $(YACCFLAG) parser.y
+
+lex.yy.o: lex.yy.c
+	$(CC) -c lex.yy.c
+
+lex.yy.c: lex.l
+	$(LEX) lex.l
+
+main.o: main.c
+	$(CC) -c main.c
 
 clean:
-	-rm $(LEX) $(TARGET) $(YACC) $(YACC_HEADER)
+	rm -f $(TARGET) $(OBJECT)

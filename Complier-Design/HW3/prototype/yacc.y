@@ -1,4 +1,7 @@
 %{
+#include "table_stack.h"
+#include "symbol_table.h"
+#include "var.h"
 #include <stdio.h>
 #include <stdlib.h>
 #define MAX_ID_LENGTH 256
@@ -14,11 +17,12 @@ extern int id_cnt[MAX_ID_CNT];
 extern int cur_id;
 int yylex();
 int yyerror(char *);
+TableStack_t* ts;
 %}
 
 %token WHILE DO IF ELSE TRUE FALSE FOR INT PRINT CONST READ BOOLEAN
 %token BOOL VOID FLOAT DOUBLE STRING CONTINUE BREAK RETURN
-%token SCI_NUM INT_NUM FLOAT_NUM ID
+%token SCI_NUM INT_NUM FLOAT_NUM ID STRING_LIT
 
 %right '='
 %left OR
@@ -28,6 +32,17 @@ int yyerror(char *);
 %left '+' '-'
 %left '*' '/' '%'
 %right NEG
+
+%type<text> STRING_LIT
+%type<text> ID
+
+%union {
+    char* text;
+    int ival;
+    double dval;
+
+    Var_t* var;
+}
 %%
 
 program : decl_list function_def decl_and_def_list
@@ -86,8 +101,8 @@ var_decl_list : var_decl_list ',' var_decl
               | var_decl
               ;
 
-var_decl : ID
-         | ID '=' expr
+var_decl : ID { $$ = $1}
+         | ID '=' expr {}
          | ID brackets_int
          | ID brackets_int '=' '{' expr_list '}'
          ;
@@ -190,7 +205,7 @@ literal : INT_NUM
         | FLOAT_NUM
         | TRUE
         | FALSE
-        | STRING
+        | STRING_LIT
         ;
 
 type : INT
@@ -225,8 +240,14 @@ int  main( int argc, char **argv )
         exit(-1);
     }
     
+    ts = newTableStack();
+    pushTable(ts);
+
     yyin = fp;
     yyparse();
+
+    printTable(getTopTable(ts));
+    popTable(ts);
 
     fprintf( stdout, "\n" );
     fprintf( stdout, "|--------------------------------|\n" );
