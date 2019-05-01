@@ -18,7 +18,7 @@ int yyerror(char *);
 
 %token WHILE DO IF ELSE TRUE FALSE FOR INT PRINT CONST READ BOOLEAN
 %token BOOL VOID FLOAT DOUBLE STRING CONTINUE BREAK RETURN
-%token SCI_NUM INT_NUM FLOAT_NUM ID
+%token SCI_NUM INT_NUM FLOAT_NUM ID STRING_LIT
 
 %right '='
 %left OR
@@ -190,7 +190,7 @@ literal : INT_NUM
         | FLOAT_NUM
         | TRUE
         | FALSE
-        | STRING
+        | STRING_LIT
         ;
 
 type : INT

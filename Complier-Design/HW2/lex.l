@@ -92,7 +92,7 @@ C_COM  \/\/.*
     }
     token[t] = '\0';
     tokenString("string", token);
-    return STRING;
+    return STRING_LIT;
 }
 <INITIAL>{C_COM}  LIST;
 <INITIAL>^#pragma{SPACE}source{SPACE}(on|off) {
