@@ -22,6 +22,7 @@ int main(int argc, char **argv) {
 
     ts = newTableStack();
     linenum = 1;
+    Opt_Symbol = 0;
     pushTS(ts);
 
     yyparse(); /* primary procedure of parser */

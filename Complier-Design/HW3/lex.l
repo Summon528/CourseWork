@@ -1,5 +1,6 @@
 %{
 #include "everything.h"
+#include "extern.h"
 #include "y.tab.h"
 #include <string.h>
 
@@ -9,9 +10,9 @@
 #define tokenString(t, s)   {LIST; if (Opt_Token) printf("<%s:%s>\n", t, s);}
 #define MAX_LINE_LENG 256
 #define MAX_ID_LENG 256 
-int Opt_Source = 1;
-int Opt_Token = 1;
-int Opt_Statistic = 1;
+int Opt_Source = 0;
+int Opt_Token = 0;
+int Opt_Statistic = 0;
 extern int linenum;
 char buf[MAX_LINE_LENG];
 char strContent[MAX_LINE_LENG];
@@ -29,6 +30,7 @@ id *new_id();
 %x SOURCE
 %x TOKEN
 %x STATISTIC
+%x SYMBOL
 %x OTHER
 %x STR
 %x STR_ESCAPE
@@ -53,6 +55,10 @@ id *new_id();
 <PRAGMA>"statistic"	{
 		LIST;
 		BEGIN STATISTIC;
+	}
+<PRAGMA>"symbol"	{
+		LIST;
+		BEGIN SYMBOL;
 	}
 
 <SOURCE>"on"	{
@@ -103,6 +109,23 @@ id *new_id();
 		LIST;
 	}
 <STATISTIC>.	{
+		printf("Error at line %d: %s\n",linenum, yytext);
+        exit(0);
+	}
+<SYMBOL>"on"	{
+		LIST;
+		Opt_Symbol = 1;
+		BEGIN OTHER;
+	}
+<SYMBOL>"off"	{
+		LIST;
+		Opt_Symbol = 0;
+		BEGIN OTHER;
+	}
+<SYMBOL>[\t ]+	{
+		LIST;
+	}
+<SYMBOL>.	{
 		printf("Error at line %d: %s\n",linenum, yytext);
         exit(0);
 	}

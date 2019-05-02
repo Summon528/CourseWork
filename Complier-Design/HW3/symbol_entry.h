@@ -1,7 +1,7 @@
 #pragma once
 #include "base.h"
+#include "decl_array.h"
 #include "int_array.h"
-#include "kind_array.h"
 #include "literal.h"
 
 typedef struct SymbolEntry_t {
@@ -11,7 +11,7 @@ typedef struct SymbolEntry_t {
 
     IntArray_t* arr_sig;
     Literal_t* const_val;
-    KindArray_t* params;
+    DeclArray_t* params;
 } SymbolEntry_t;
 
 SymbolEntry_t* newSymbolEntry();

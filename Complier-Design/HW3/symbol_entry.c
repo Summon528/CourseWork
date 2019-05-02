@@ -71,7 +71,13 @@ void printSymbolEntry(SymbolEntry_t* se, int level) {
     } else if (se->kind == function && se->params != NULL) {
         for (int i = 0; i < se->params->size; i++) {
             if (i != 0) printf(",");
-            printf("%s", TYPE_STR[se->params->arr[i]]);
+            printf("%s", TYPE_STR[se->params->arr[i]->type]);
+            IntArray_t* arr_sig = se->params->arr[i]->arr_sig;
+            if (arr_sig != NULL) {
+                for (int j = 0; j < arr_sig->size; j++) {
+                    printf("[%d]", arr_sig->arr[j]);
+                }
+            }
         }
     }
     puts("");
@@ -79,6 +85,6 @@ void printSymbolEntry(SymbolEntry_t* se, int level) {
 
 void freeSymbolEntry(SymbolEntry_t* se) {
     freeIntArray(se->arr_sig);
-    freeKindArray(se->params);
+    freeDeclArray(se->params);
     free(se);
 }

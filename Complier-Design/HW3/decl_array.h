@@ -9,5 +9,6 @@ typedef struct declarray {
 } DeclArray_t;
 
 DeclArray_t* newDeclArray();
+DeclArray_t* newDeclArrayCopy(DeclArray_t* other);
 DeclArray_t* pushDeclArray(DeclArray_t* a, DeclItem_t* val);
 void freeDeclArray(DeclArray_t* a);

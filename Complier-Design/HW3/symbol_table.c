@@ -84,13 +84,7 @@ void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, DeclArray_t* da,
     se->const_val = NULL;
     se->arr_sig = NULL;
     se->type = type;
-    if (da != NULL) {
-        se->params = newKindArray();
-        for (int i = 0; i < da->size; i++)
-            pushKindArray(se->params, da->arr[i]->type);
-    } else {
-        se->params = NULL;
-    }
+    se->params = newDeclArrayCopy(da);
 }
 
 SymbolEntry_t* findST(SymbolTable_t* st, char* name) {
@@ -103,6 +97,7 @@ SymbolEntry_t* findST(SymbolTable_t* st, char* name) {
 }
 
 void printST(SymbolTable_t* st) {
+    if (!Opt_Symbol) return;
     printf(
         "======================================================================"
         "=================\n");

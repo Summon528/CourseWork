@@ -88,7 +88,7 @@ int yyerror( char *msg );
 
 %type<iarray> dim;
 %type<decl_item> array_decl;
-%type<literal> literal_const;
+%type<literal> literal_const sign_literal_const;
 %type<decl_array> identifier_list const_list parameter_list;
 %type<kind> scalar_type;
 %start program
@@ -111,27 +111,31 @@ decl_and_def_list : decl_and_def_list var_decl
                   | 
                   ;
 
-funct_def : scalar_type ID L_PAREN R_PAREN compound_statement
+funct_def : scalar_type ID L_PAREN R_PAREN compound_statement {
+                pushSTFunc(getTopTS(ts), $2, $1, NULL, 0);
+            }
           | scalar_type ID L_PAREN parameter_list R_PAREN L_BRACE {
-                pushSTFunc(getTopTS(ts), $2, $1, $4, 0);
                 pushTS(ts); 
                 pushSTParamArray(getTopTS(ts), $4);
-                freeDeclArray($4);
             }
             var_const_stmt_list R_BRACE {
                 printST(getTopTS(ts));
                 popTS(ts);
+                pushSTFunc(getTopTS(ts), $2, $1, $4, 0);
+                freeDeclArray($4);
             }
-          | VOID ID L_PAREN R_PAREN compound_statement
+          | VOID ID L_PAREN R_PAREN compound_statement {
+              pushSTFunc(getTopTS(ts), $2, _void, NULL, 0);
+          }
           | VOID ID L_PAREN parameter_list R_PAREN L_BRACE {
-                pushSTFunc(getTopTS(ts), $2, _void, $4, 0);
                 pushTS(ts);
                 pushSTParamArray(getTopTS(ts), $4);
-                freeDeclArray($4);
             }
             var_const_stmt_list R_BRACE {
                 printST(getTopTS(ts));
                 popTS(ts);
+                pushSTFunc(getTopTS(ts), $2, _void, $4, 0);
+                freeDeclArray($4);
             }
           ;
 
@@ -177,8 +181,8 @@ const_decl :
         freeDeclArray($3);
     };
 
-const_list : const_list COMMA ID ASSIGN_OP literal_const { $$ = pushDeclArray($1, newDeclItemConst($3, $5)); }
-           | ID ASSIGN_OP literal_const { $$ = pushDeclArray(newDeclArray(), newDeclItemConst($1, $3)); }
+const_list : const_list COMMA ID ASSIGN_OP sign_literal_const { $$ = pushDeclArray($1, newDeclItemConst($3, $5)); }
+           | ID ASSIGN_OP sign_literal_const { $$ = pushDeclArray(newDeclArray(), newDeclItemConst($1, $3)); }
            ;
 
 array_decl : ID dim { $$ = newArrDecl($1, $2); }
@@ -211,21 +215,19 @@ simple_statement : variable_reference ASSIGN_OP logical_expression SEMICOLON
                  | READ variable_reference SEMICOLON
                  ;
 
-conditional_statement : IF L_PAREN logical_expression R_PAREN L_BRACE var_const_stmt_list R_BRACE
+conditional_statement : IF L_PAREN logical_expression R_PAREN compound_statement
                       | IF L_PAREN logical_expression R_PAREN 
-                            L_BRACE var_const_stmt_list R_BRACE
+                            compound_statement
                         ELSE
-                            L_BRACE var_const_stmt_list R_BRACE
+                            compound_statement
                       ;
 while_statement : WHILE L_PAREN logical_expression R_PAREN
-                    L_BRACE var_const_stmt_list R_BRACE
-                | DO L_BRACE
-                    var_const_stmt_list
-                  R_BRACE WHILE L_PAREN logical_expression R_PAREN SEMICOLON
+                    compound_statement
+                | DO compound_statement WHILE L_PAREN logical_expression R_PAREN SEMICOLON
                 ;
 
 for_statement : FOR L_PAREN initial_expression_list SEMICOLON control_expression_list SEMICOLON increment_expression_list R_PAREN 
-                    L_BRACE var_const_stmt_list R_BRACE
+                    compound_statement
               ;
 
 initial_expression_list : initial_expression
@@ -339,8 +341,8 @@ scalar_type : INT
             | FLOAT
             ;
 
-sign_literal_const : SUB_OP sign_literal_const
-                   | literal_const
+sign_literal_const : SUB_OP sign_literal_const { $$ = negLiteral($2); }
+                   | literal_const { $$ = $1; }
                    ;
 
 literal_const : INT_CONST
