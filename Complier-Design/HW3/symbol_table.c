@@ -15,9 +15,6 @@ SymbolTable_t* newSymbolTable(int level) {
 
 SymbolEntry_t* pushST(SymbolTable_t* st, char* name) {
     if (findST(st, name) != NULL) {
-        fprintf(stderr,
-                "##########Error at Line #%d: %s redeclared.##########\n",
-                linenum, name);
         return NULL;
     }
     SymbolEntry_t* se = newSymbolEntry();
@@ -34,33 +31,65 @@ SymbolEntry_t* pushST(SymbolTable_t* st, char* name) {
 void pushSTVarArray(SymbolTable_t* st, DeclArray_t* da, Type_t type) {
     for (int i = 0; i < da->size; i++) {
         SymbolEntry_t* se = pushST(st, da->arr[i]->name);
-        if (se == NULL) continue;
+        if (se == NULL) {
+            redeclared(da->arr[i]->name);
+            continue;
+        }
         se->kind = variable;
         se->const_val = NULL;
         se->arr_sig = newIntArrayCpy(da->arr[i]->arr_sig);
         se->type = type;
+        se->params = NULL;
     }
 }
 
 void pushSTConstArray(SymbolTable_t* st, DeclArray_t* da, Type_t type) {
     for (int i = 0; i < da->size; i++) {
         SymbolEntry_t* se = pushST(st, da->arr[i]->name);
-        if (se == NULL) continue;
+        if (se == NULL) {
+            redeclared(da->arr[i]->name);
+            continue;
+        }
         se->kind = constant;
         se->const_val = newLiteralCopy(da->arr[i]->val);
         se->arr_sig = NULL;
         se->type = type;
+        se->params = NULL;
     }
 }
 
 void pushSTParamArray(SymbolTable_t* st, DeclArray_t* da) {
     for (int i = 0; i < da->size; i++) {
         SymbolEntry_t* se = pushST(st, da->arr[i]->name);
-        if (se == NULL) continue;
+        if (se == NULL) {
+            redeclared(da->arr[i]->name);
+            continue;
+        }
         se->kind = parameter;
         se->const_val = newLiteralCopy(da->arr[i]->val);
         se->arr_sig = newIntArrayCpy(da->arr[i]->arr_sig);
         se->type = da->arr[i]->type;
+        se->params = NULL;
+    }
+}
+
+void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, DeclArray_t* da,
+                int decl) {
+    SymbolEntry_t* se = pushST(st, name);
+    if (se == NULL) {
+        if (decl) redeclared(name);
+        return;
+    }
+    se->kind = function;
+    se->const_val = NULL;
+    se->arr_sig = NULL;
+    se->type = type;
+    if (da != NULL) {
+        se->params = newKindArray();
+        for (int i = 0; i < da->size; i++)
+            pushKindArray(se->params, da->arr[i]->type);
+    } else {
+        se->params = NULL;
     }
 }
 
@@ -94,4 +123,9 @@ void freeST(SymbolTable_t* st) {
     for (int i = 0; i < st->size; i++) freeSymbolEntry(st->entries[i]);
     free(st->entries);
     free(st);
+}
+
+void redeclared(char* name) {
+    fprintf(stderr, "##########Error at Line #%d: %s redeclared.##########\n",
+            linenum, name);
 }

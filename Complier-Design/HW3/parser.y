@@ -113,6 +113,7 @@ decl_and_def_list : decl_and_def_list var_decl
 
 funct_def : scalar_type ID L_PAREN R_PAREN compound_statement
           | scalar_type ID L_PAREN parameter_list R_PAREN L_BRACE {
+                pushSTFunc(getTopTS(ts), $2, $1, $4, 0);
                 pushTS(ts); 
                 pushSTParamArray(getTopTS(ts), $4);
                 freeDeclArray($4);
@@ -123,6 +124,7 @@ funct_def : scalar_type ID L_PAREN R_PAREN compound_statement
             }
           | VOID ID L_PAREN R_PAREN compound_statement
           | VOID ID L_PAREN parameter_list R_PAREN L_BRACE {
+                pushSTFunc(getTopTS(ts), $2, _void, $4, 0);
                 pushTS(ts);
                 pushSTParamArray(getTopTS(ts), $4);
                 freeDeclArray($4);
@@ -133,10 +135,10 @@ funct_def : scalar_type ID L_PAREN R_PAREN compound_statement
             }
           ;
 
-funct_decl : scalar_type ID L_PAREN R_PAREN SEMICOLON
-           | scalar_type ID L_PAREN parameter_list R_PAREN SEMICOLON
-           | VOID ID L_PAREN R_PAREN SEMICOLON
-           | VOID ID L_PAREN parameter_list R_PAREN SEMICOLON
+funct_decl : scalar_type ID L_PAREN R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts), $2, $1, NULL, 1); }
+           | scalar_type ID L_PAREN parameter_list R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts), $2, $1, $4, 1), freeDeclArray($4); }
+           | VOID ID L_PAREN R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts), $2, _void, NULL, 1); }
+           | VOID ID L_PAREN parameter_list R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts), $2, _void, $4, 1), freeDeclArray($4); }
            ;
 
 parameter_list : parameter_list COMMA scalar_type ID { $$ = pushDeclArray($1, newDeclItemParam($4, $3)); }

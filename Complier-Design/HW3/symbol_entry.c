@@ -6,7 +6,8 @@
 
 static const char* KIND_STR[] = {"function", "parameter", "variable",
                                  "constant"};
-static const char* TYPE_STR[] = {"int", "float", "double", "bool", "string"};
+static const char* TYPE_STR[] = {"int",  "float",  "double",
+                                 "bool", "string", "void"};
 
 SymbolEntry_t* newSymbolEntry() {
     SymbolEntry_t* se = (SymbolEntry_t*)malloc(sizeof(SymbolEntry_t));
@@ -67,10 +68,10 @@ void printSymbolEntry(SymbolEntry_t* se, int level) {
             default:
                 break;
         }
-    } else if (se->kind == function) {
+    } else if (se->kind == function && se->params != NULL) {
         for (int i = 0; i < se->params->size; i++) {
             if (i != 0) printf(",");
-            printf("%s", KIND_STR[se->params->arr[i]]);
+            printf("%s", TYPE_STR[se->params->arr[i]]);
         }
     }
     puts("");
@@ -79,6 +80,5 @@ void printSymbolEntry(SymbolEntry_t* se, int level) {
 void freeSymbolEntry(SymbolEntry_t* se) {
     freeIntArray(se->arr_sig);
     freeKindArray(se->params);
-    free(se->params);
     free(se);
 }
