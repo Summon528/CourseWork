@@ -2,8 +2,8 @@
   "tasks": [
     {
       "type": "shell",
-      "label": "clang build active file",
-      "command": "/usr/bin/clang",
+      "label": "gcc build active file",
+      "command": "/usr/bin/gcc",
       "args": [
         "-g",
         "${file}",
@@ -13,6 +13,11 @@
       "options": {
         "cwd": "/usr/bin"
       }
+    },
+    {
+      "type": "shell",
+      "label": "make",
+      "command": "make"
     }
   ],
   "version": "2.0.0"

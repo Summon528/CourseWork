@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "extern.h"
 
 extern int yyparse();
 extern FILE *yyin;
+
 int main(int argc, char **argv) {
     if (argc == 1) {
         yyin = stdin;
@@ -18,7 +20,15 @@ int main(int argc, char **argv) {
         exit(0);
     }
 
+    ts = newTableStack();
+    linenum = 1;
+    pushTS(ts);
+
     yyparse(); /* primary procedure of parser */
+
+    printST(getTopTS(ts));
+    popTS(ts);
+    freeTS(ts);
 
     fprintf(stdout, "\n|--------------------------------|\n");
     fprintf(stdout, "|  There is no syntactic error!  |\n");

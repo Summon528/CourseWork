@@ -6,3 +6,4 @@ y.tab.c
 y.tab.h
 test/out/*
 a.out
+*.o

@@ -1,30 +1,30 @@
 TARGET = parser
-OBJECT = lex.yy.c y.tab.c y.tab.o lex.yy.o y.output parser y.tab.h main.o
-CC = gcc -g
+CC = gcc -g -Wall
 LEX = flex
-YACC = yacc -v
+YACC = yacc
 YACCFLAG = -d
 LIBS = -lfl
+SRC=$(wildcard *.c)
+OBJ=$(patsubst %.c, %.o, $(SRC))
+OBJ+=lex.yy.o
+OBJ+=y.tab.o
 
 all: $(TARGET)
 
-parser: y.tab.o lex.yy.o main.o
-	$(CC) -o $(TARGET) y.tab.o lex.yy.o main.o $(LIBS)
+parser: $(OBJ) 
+	$(CC) $^ -o $(TARGET) $(LIBS)
 
-y.tab.o: y.tab.c
-	$(CC) -c y.tab.c
-
-y.tab.c: parser.y
+y.tab.c y.tab.h: parser.y
 	$(YACC) $(YACCFLAG) parser.y
-
-lex.yy.o: lex.yy.c
-	$(CC) -c lex.yy.c
 
 lex.yy.c: lex.l
 	$(LEX) lex.l
 
-main.o: main.c
-	$(CC) -c main.c
+lex.yy.o: y.tab.h lex.yy.c
+	$(CC) -o lex.yy.o lex.yy.c -c
+
+%.o: %.c
+	$(CC) -o $@ $< -c
 
 clean:
-	rm -f $(TARGET) $(OBJECT)
+	rm -f $(TARGET) $(OBJ) lex.yy.c y.tab.c y.tab.h

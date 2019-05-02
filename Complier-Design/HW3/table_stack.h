@@ -1,6 +1,6 @@
 #pragma once
+#include "base.h"
 #include "symbol_table.h"
-#define INITIAL_CAPACITY 4
 
 typedef struct TableStack_t {
     SymbolTable_t** stack;
@@ -9,6 +9,7 @@ typedef struct TableStack_t {
 } TableStack_t;
 
 TableStack_t* newTableStack();
-void pushTable(TableStack_t* ts);
-void popTable(TableStack_t* ts);
-SymbolTable_t* getTopTable(TableStack_t* ts);
+void pushTS(TableStack_t* ts);
+void popTS(TableStack_t* ts);
+SymbolTable_t* getTopTS(TableStack_t* ts);
+void freeTS(TableStack_t* ts);

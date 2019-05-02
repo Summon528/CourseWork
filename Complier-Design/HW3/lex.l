@@ -1,6 +1,7 @@
 %{
-
+#include "everything.h"
 #include "y.tab.h"
+#include <string.h>
 
 #define LIST                strcat(buf, yytext)
 #define token(t)            {LIST; if (Opt_Token) printf("<%s>\n", #t);}
@@ -11,7 +12,7 @@
 int Opt_Source = 1;
 int Opt_Token = 1;
 int Opt_Statistic = 1;
-int linenum = 1;
+extern int linenum;
 char buf[MAX_LINE_LENG];
 char strContent[MAX_LINE_LENG];
 typedef struct ids{
@@ -225,19 +226,39 @@ id *new_id();
 
 "for"	{tokenString("kw", yytext);	return FOR;}
 
-"int"	{tokenString("kw", yytext);	return INT;}
+"int"	{
+	tokenString("kw", yytext);
+	yylval.kind = _int;
+	return INT;
+}
 
 "print"	{tokenString("kw", yytext);	return PRINT;}
 
-"bool"	{tokenString("kw", yytext);	return BOOL;}
+"bool"	{
+	tokenString("kw", yytext);
+	yylval.kind = _bool;
+	return BOOL;
+}
 
 "void"	{tokenString("kw", yytext);	return VOID;}
 
-"float"	{tokenString("kw", yytext);	return FLOAT;}
+"float"	{
+	tokenString("kw", yytext);
+	yylval.kind = _float;
+	return FLOAT;
+}
 
-"double"	{tokenString("kw", yytext);	return DOUBLE;}
+"double"	{
+	tokenString("kw", yytext);
+	yylval.kind = _double;
+	return DOUBLE;
+}
 
-"string"	{tokenString("kw", yytext);	return STRING;}
+"string"	{
+	tokenString("kw", yytext);
+	yylval.kind = _string;
+	return STRING;
+}
 
 "continue"	{tokenString("kw", yytext);	return CONTINUE;}
 
@@ -249,7 +270,9 @@ id *new_id();
 	
 0 |
 [1-9][0-9]* {
-		tokenString("int", yytext);	return INT_CONST;
+		tokenString("int", yytext);
+		yylval.literal = newLiteral(yytext, _int);
+		return INT_CONST;
 	}
 [0-9]+\.[0-9]+	{
 		tokenString("float", yytext);	return FLOAT_CONST;
@@ -346,7 +369,9 @@ id *new_id();
 		if(Opt_Statistic){
 			set(&id_head,yytext);
 		}
-		tokenString("id",yytext);	return ID;
+		tokenString("id",yytext);
+		yylval.text = strdup(yytext);
+		return ID;
 	}
 .	{
 		printf("Error at line %d: %s\n",linenum, yytext);
@@ -382,35 +407,36 @@ int main( int argc, char **argv )
   	exit(0);
 }
 */
-void set(id **head, char *yytext)
-{
-	id *offset = *head;
-	id *prev = NULL;	
-	if(offset == NULL){
-		*head = new_id();
-		strncpy((*head)->id_name, yytext,strlen(yytext));
-		(*head)->freq = 1;
-	}else{
-		while(offset){
-			if(!strncmp(offset->id_name, yytext, (strlen(yytext)>=strlen(offset->id_name)?strlen(yytext):strlen(offset->id_name)))){
-				offset->freq+=1;
-				break;
-			}
-			prev = offset;
-			offset = offset -> next;
-		}
-		if(!offset){
-			prev->next = new_id();
-			strncpy(prev->next->id_name, yytext, strlen(yytext));
-			prev->next->freq+=1;
-		}
-	}
+void set(id **head, char *yytext) {
+    id *offset = *head;
+    id *prev = NULL;
+    if (offset == NULL) {
+        *head = new_id();
+        strncpy((*head)->id_name, yytext, strlen(yytext));
+        (*head)->freq = 1;
+    } else {
+        while (offset) {
+            if (!strncmp(offset->id_name, yytext,
+                         (strlen(yytext) >= strlen(offset->id_name)
+                              ? strlen(yytext)
+                              : strlen(offset->id_name)))) {
+                offset->freq += 1;
+                break;
+            }
+            prev = offset;
+            offset = offset->next;
+        }
+        if (!offset) {
+            prev->next = new_id();
+            strncpy(prev->next->id_name, yytext, strlen(yytext));
+            prev->next->freq += 1;
+        }
+    }
 }
-id *new_id()
-{
-	id *temp = (id *)malloc(sizeof(id));
-	temp->next = NULL;
-	memset(temp->id_name, 0, 256);
-	temp->freq = 0;
-	return temp;
+id *new_id() {
+    id *temp = (id *)malloc(sizeof(id));
+    temp->next = NULL;
+    memset(temp->id_name, 0, 256);
+    temp->freq = 0;
+    return temp;
 }

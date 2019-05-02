@@ -1,20 +1,21 @@
 %{
+#include "everything.h"
 #include <stdio.h>
 #include <stdlib.h>
-
 
 extern int linenum;
 extern FILE *yyin;
 extern char *yytext;
 extern char buf[256];
+extern TableStack_t* ts;
 
 int yylex();
 int yyerror( char *msg );
 
 %}
 
-%token  ID
-%token  INT_CONST
+%token<text>  ID
+%token<literal>  INT_CONST
 %token  FLOAT_CONST
 %token  SCIENTIFIC
 %token  STR_CONST
@@ -35,13 +36,13 @@ int yyerror( char *msg );
 %token  TRUE
 %token  FALSE
 %token  FOR
-%token  INT
+%token<kind>  INT
 %token  PRINT
-%token  BOOL
+%token<kind>  BOOL
 %token  VOID
-%token  FLOAT
-%token  DOUBLE
-%token  STRING
+%token<kind>  FLOAT
+%token<kind>  DOUBLE
+%token<kind>  STRING
 %token  CONTINUE
 %token  BREAK
 %token  RETURN
@@ -75,6 +76,20 @@ int yyerror( char *msg );
     FOR 
     WHILE
 */
+
+%union {
+    char* text;
+    Literal_t* literal;
+    IntArray_t* iarray;
+    DeclItem_t* decl_item;
+    DeclArray_t* decl_array;
+    Kind_t kind;
+}
+
+%type<iarray> dim;
+%type<decl_item> array_decl;
+%type<decl_array> identifier_list;
+%type<kind> scalar_type;
 %start program
 %%
 
@@ -113,17 +128,21 @@ parameter_list : parameter_list COMMA scalar_type ID
                | scalar_type ID
                ;
 
-var_decl : scalar_type identifier_list SEMICOLON
-         ;
+var_decl : 
+    scalar_type identifier_list SEMICOLON { 
+        pushSTVarArray(getTopTS(ts), $2, $1); 
+        freeDeclArray($2);
+    }
+    ;
 
-identifier_list : identifier_list COMMA ID
-                | identifier_list COMMA ID ASSIGN_OP logical_expression
-                | identifier_list COMMA array_decl ASSIGN_OP initial_array
-                | identifier_list COMMA array_decl
-                | array_decl ASSIGN_OP initial_array
-                | array_decl
-                | ID ASSIGN_OP logical_expression
-                | ID
+identifier_list : identifier_list COMMA ID  { $$ = pushDeclArray($1, newDeclItem($3)); }
+                | identifier_list COMMA ID ASSIGN_OP logical_expression { $$ = pushDeclArray($1, newDeclItem($3)); }
+                | identifier_list COMMA array_decl ASSIGN_OP initial_array  { $$ = pushDeclArray($1, $3); }
+                | identifier_list COMMA array_decl { $$ = pushDeclArray($1, $3); }
+                | array_decl ASSIGN_OP initial_array { $$ = pushDeclArray(newDeclArray(), $1); }
+                | array_decl { $$ = pushDeclArray(newDeclArray(), $1); }
+                | ID ASSIGN_OP logical_expression { $$ = pushDeclArray(newDeclArray(), newDeclItem($1)); }
+                | ID { $$ = pushDeclArray(newDeclArray(), newDeclItem($1)); }
                 ;
 
 initial_array : L_BRACE literal_list R_BRACE
@@ -140,11 +159,11 @@ const_list : const_list COMMA ID ASSIGN_OP sign_literal_const
            | ID ASSIGN_OP sign_literal_const
            ;
 
-array_decl : ID dim
+array_decl : ID dim { $$ = newArrDecl($1, $2); }
            ;
 
-dim : dim ML_BRACE INT_CONST MR_BRACE
-    | ML_BRACE INT_CONST MR_BRACE
+dim : dim ML_BRACE INT_CONST MR_BRACE { $$ = pushIntArray($1, $3->ival); }
+    | ML_BRACE INT_CONST MR_BRACE { $$ = pushIntArray(newIntArray(), $2->ival); }
     ;
 
 compound_statement : L_BRACE var_const_stmt_list R_BRACE
