@@ -36,6 +36,7 @@ void pushSTVarArray(SymbolTable_t* st, DeclArray_t* da, Type_t type) {
         SymbolEntry_t* se = pushST(st, da->arr[i]->name);
         if (se == NULL) continue;
         se->kind = variable;
+        se->const_val = NULL;
         se->arr_sig = newIntArrayCpy(da->arr[i]->arr_sig);
         se->type = type;
     }
@@ -47,7 +48,19 @@ void pushSTConstArray(SymbolTable_t* st, DeclArray_t* da, Type_t type) {
         if (se == NULL) continue;
         se->kind = constant;
         se->const_val = newLiteralCopy(da->arr[i]->val);
+        se->arr_sig = NULL;
         se->type = type;
+    }
+}
+
+void pushSTParamArray(SymbolTable_t* st, DeclArray_t* da) {
+    for (int i = 0; i < da->size; i++) {
+        SymbolEntry_t* se = pushST(st, da->arr[i]->name);
+        if (se == NULL) continue;
+        se->kind = parameter;
+        se->const_val = newLiteralCopy(da->arr[i]->val);
+        se->arr_sig = newIntArrayCpy(da->arr[i]->arr_sig);
+        se->type = da->arr[i]->type;
     }
 }
 

@@ -89,7 +89,7 @@ int yyerror( char *msg );
 %type<iarray> dim;
 %type<decl_item> array_decl;
 %type<literal> literal_const;
-%type<decl_array> identifier_list const_list;
+%type<decl_array> identifier_list const_list parameter_list;
 %type<kind> scalar_type;
 %start program
 %%
@@ -112,9 +112,25 @@ decl_and_def_list : decl_and_def_list var_decl
                   ;
 
 funct_def : scalar_type ID L_PAREN R_PAREN compound_statement
-          | scalar_type ID L_PAREN parameter_list R_PAREN  compound_statement
+          | scalar_type ID L_PAREN parameter_list R_PAREN L_BRACE {
+                pushTS(ts); 
+                pushSTParamArray(getTopTS(ts), $4);
+                freeDeclArray($4);
+            }
+            var_const_stmt_list R_BRACE {
+                printST(getTopTS(ts));
+                popTS(ts);
+            }
           | VOID ID L_PAREN R_PAREN compound_statement
-          | VOID ID L_PAREN parameter_list R_PAREN compound_statement
+          | VOID ID L_PAREN parameter_list R_PAREN L_BRACE {
+                pushTS(ts);
+                pushSTParamArray(getTopTS(ts), $4);
+                freeDeclArray($4);
+            }
+            var_const_stmt_list R_BRACE {
+                printST(getTopTS(ts));
+                popTS(ts);
+            }
           ;
 
 funct_decl : scalar_type ID L_PAREN R_PAREN SEMICOLON
@@ -123,10 +139,10 @@ funct_decl : scalar_type ID L_PAREN R_PAREN SEMICOLON
            | VOID ID L_PAREN parameter_list R_PAREN SEMICOLON
            ;
 
-parameter_list : parameter_list COMMA scalar_type ID
-               | parameter_list COMMA scalar_type array_decl
-               | scalar_type array_decl
-               | scalar_type ID
+parameter_list : parameter_list COMMA scalar_type ID { $$ = pushDeclArray($1, newDeclItemParam($4, $3)); }
+               | parameter_list COMMA scalar_type array_decl { $4->type = $3, $$ = pushDeclArray($1, $4); }
+               | scalar_type array_decl { $2->type = $1, $$ = pushDeclArray(newDeclArray(), $2); }
+               | scalar_type ID { $$ = pushDeclArray(newDeclArray(), newDeclItemParam($2, $1)); }
                ;
 
 var_decl : 
