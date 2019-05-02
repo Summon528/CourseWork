@@ -17,10 +17,18 @@ Literal_t* newLiteral(char* val, Type_t type) {
         case _double:
         case _float:
             l->dval = atof(val);
+            l->fval = atof(val);
             break;
         case _string:
             strncpy(l->sval, val, sizeof(l->sval) - 1);
             break;
     }
+    return l;
+}
+
+Literal_t* newLiteralCopy(Literal_t* other) {
+    if (other == NULL) return NULL;
+    Literal_t* l = malloc(sizeof(Literal_t));
+    memcpy(l, other, sizeof(Literal_t));
     return l;
 }

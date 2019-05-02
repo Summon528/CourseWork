@@ -220,9 +220,17 @@ id *new_id();
 
 "else"	{tokenString("kw", yytext);	return ELSE;}
 
-"true"	{tokenString("kw", yytext);	return TRUE;}
+"true"	{
+	tokenString("kw", yytext);
+	yylval.literal = newLiteral(yytext, _bool);
+	return TRUE;
+}
 
-"false"	{tokenString("kw", yytext);	return FALSE;}
+"false"	{
+	tokenString("kw", yytext);
+	yylval.literal = newLiteral(yytext, _bool);
+	return FALSE;
+}
 
 "for"	{tokenString("kw", yytext);	return FOR;}
 
@@ -275,11 +283,15 @@ id *new_id();
 		return INT_CONST;
 	}
 [0-9]+\.[0-9]+	{
-		tokenString("float", yytext);	return FLOAT_CONST;
+		tokenString("float", yytext);
+		yylval.literal = newLiteral(yytext, _double);
+		return FLOAT_CONST;
 	}
 
 ([0-9]+(\.[0-9]+)?)([eE][-+]?[0-9]+)	{
-		tokenString("sci", yytext);	return SCIENTIFIC;
+		tokenString("sci", yytext);
+		yylval.literal = newLiteral(yytext, _double);
+		return SCIENTIFIC;
 	}
 "\""	{ 
 		LIST;
@@ -327,6 +339,7 @@ id *new_id();
 		if( Opt_Token)
 			tokenString("string", strContent);
 		BEGIN INITIAL;
+		yylval.literal = newLiteral(strContent, _string);
 		return STR_CONST;
 	}
 <STR>[^\\\n\"]	{

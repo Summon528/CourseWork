@@ -16,9 +16,9 @@ int yyerror( char *msg );
 
 %token<text>  ID
 %token<literal>  INT_CONST
-%token  FLOAT_CONST
-%token  SCIENTIFIC
-%token  STR_CONST
+%token<literal>  FLOAT_CONST
+%token<literal>  SCIENTIFIC
+%token<literal>  STR_CONST
 
 %token  LE_OP
 %token  NE_OP
@@ -33,8 +33,8 @@ int yyerror( char *msg );
 %token  DO
 %token  IF
 %token  ELSE
-%token  TRUE
-%token  FALSE
+%token<literal>  TRUE
+%token<literal>  FALSE
 %token  FOR
 %token<kind>  INT
 %token  PRINT
@@ -88,7 +88,8 @@ int yyerror( char *msg );
 
 %type<iarray> dim;
 %type<decl_item> array_decl;
-%type<decl_array> identifier_list;
+%type<literal> literal_const;
+%type<decl_array> identifier_list const_list;
 %type<kind> scalar_type;
 %start program
 %%
@@ -132,8 +133,7 @@ var_decl :
     scalar_type identifier_list SEMICOLON { 
         pushSTVarArray(getTopTS(ts), $2, $1); 
         freeDeclArray($2);
-    }
-    ;
+    };
 
 identifier_list : identifier_list COMMA ID  { $$ = pushDeclArray($1, newDeclItem($3)); }
                 | identifier_list COMMA ID ASSIGN_OP logical_expression { $$ = pushDeclArray($1, newDeclItem($3)); }
@@ -153,10 +153,14 @@ literal_list : literal_list COMMA logical_expression
              | 
              ;
 
-const_decl : CONST scalar_type const_list SEMICOLON;
+const_decl :
+    CONST scalar_type const_list SEMICOLON {
+        pushSTConstArray(getTopTS(ts), $3, $2); 
+        freeDeclArray($3);
+    };
 
-const_list : const_list COMMA ID ASSIGN_OP sign_literal_const
-           | ID ASSIGN_OP sign_literal_const
+const_list : const_list COMMA ID ASSIGN_OP literal_const { $$ = pushDeclArray($1, newDeclItemConst($3, $5)); }
+           | ID ASSIGN_OP literal_const { $$ = pushDeclArray(newDeclArray(), newDeclItemConst($1, $3)); }
            ;
 
 array_decl : ID dim { $$ = newArrDecl($1, $2); }
@@ -166,7 +170,7 @@ dim : dim ML_BRACE INT_CONST MR_BRACE { $$ = pushIntArray($1, $3->ival); }
     | ML_BRACE INT_CONST MR_BRACE { $$ = pushIntArray(newIntArray(), $2->ival); }
     ;
 
-compound_statement : L_BRACE var_const_stmt_list R_BRACE
+compound_statement : L_BRACE { pushTS(ts); } var_const_stmt_list R_BRACE { printST(getTopTS(ts)); popTS(ts);}
                    ;
 
 var_const_stmt_list : var_const_stmt_list statement 

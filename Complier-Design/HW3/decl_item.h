@@ -10,4 +10,5 @@ typedef struct declitem {
 
 DeclItem_t* newArrDecl(char* name, IntArray_t* arr_sig);
 DeclItem_t* newDeclItem(char* name);
+DeclItem_t* newDeclItemConst(char* name, Literal_t* lit);
 void freeDeclItem(DeclItem_t* di);

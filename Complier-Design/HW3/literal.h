@@ -12,3 +12,4 @@ typedef struct literal {
 } Literal_t;
 
 Literal_t* newLiteral(char* val, Type_t type);
+Literal_t* newLiteralCopy(Literal_t* other);

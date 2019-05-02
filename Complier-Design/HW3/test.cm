@@ -7,4 +7,17 @@ int main() {
     string zz, ya = "123123";
     bool TRUE=true, FALSE=false, bbbbb, zz;
     float a, b, h = 3.3;
+{
+    const string s = "thisisstring";
+    const int zfs = 32319238;
+    const float fffff = 1e-3;
+    {
+        const string s2 = "s2", s3 = "s3", s4 = "s4";
+        const bool bbt = true, FALSE = false, FALSE = false;
+        const double ddd = 3.123;
+        {
+            const bool abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrst = true;
+        }
+    }
+}
 }

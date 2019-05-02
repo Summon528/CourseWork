@@ -41,6 +41,16 @@ void pushSTVarArray(SymbolTable_t* st, DeclArray_t* da, Type_t type) {
     }
 }
 
+void pushSTConstArray(SymbolTable_t* st, DeclArray_t* da, Type_t type) {
+    for (int i = 0; i < da->size; i++) {
+        SymbolEntry_t* se = pushST(st, da->arr[i]->name);
+        if (se == NULL) continue;
+        se->kind = constant;
+        se->const_val = newLiteralCopy(da->arr[i]->val);
+        se->type = type;
+    }
+}
+
 SymbolEntry_t* findST(SymbolTable_t* st, char* name) {
     for (int i = 0; i < st->size; i++) {
         if (strcmp(st->entries[i]->name, name) == 0) {
