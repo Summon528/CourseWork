@@ -406,7 +406,7 @@ id *new_id();
 			set(&id_head,yytext);
 		}
 		tokenString("id",yytext);
-		yylval.text = strdup(yytext);
+		yylval.text = strndup(yytext, 32);
 		return ID;
 	}
 .	{
