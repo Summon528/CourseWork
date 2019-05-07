@@ -75,11 +75,15 @@ void pushSTParamArray(SymbolTable_t* st, DeclArray_t* da) {
 
 void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, DeclArray_t* da,
                 int decl) {
-    SymbolEntry_t* se = pushST(st, name);
-    if (se == NULL) {
-        if (decl) redeclared(name);
+    SymbolEntry_t* se = findST(st, name);
+    if (se != NULL) {
+        if (se->kind != function || decl) {
+            redeclared(name);
+            return;
+        }
         return;
     }
+    se = pushST(st, name);
     se->kind = function;
     se->const_val = NULL;
     se->arr_sig = NULL;
@@ -97,7 +101,7 @@ SymbolEntry_t* findST(SymbolTable_t* st, char* name) {
 }
 
 void printST(SymbolTable_t* st) {
-    if (!Opt_Symbol) return;
+    if (!Opt_Symbol || st->size == 0) return;
     printf(
         "======================================================================"
         "=================\n");
@@ -121,6 +125,6 @@ void freeST(SymbolTable_t* st) {
 }
 
 void redeclared(char* name) {
-    fprintf(stderr, "##########Error at Line #%d: %s redeclared.##########\n",
-            linenum, name);
+    printf("##########Error at Line #%d: %s redeclared.##########\n", linenum,
+           name);
 }

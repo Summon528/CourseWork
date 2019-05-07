@@ -111,30 +111,34 @@ decl_and_def_list : decl_and_def_list var_decl
                   | 
                   ;
 
-funct_def : scalar_type ID L_PAREN R_PAREN compound_statement {
+funct_def : scalar_type ID L_PAREN R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, $1, NULL, 0);
             }
-          | scalar_type ID L_PAREN parameter_list R_PAREN L_BRACE {
+            compound_statement 
+          | scalar_type ID L_PAREN parameter_list R_PAREN {
+                pushSTFunc(getTopTS(ts), $2, $1, $4, 0);
+            } L_BRACE {
                 pushTS(ts); 
                 pushSTParamArray(getTopTS(ts), $4);
             }
             var_const_stmt_list R_BRACE {
                 printST(getTopTS(ts));
                 popTS(ts);
-                pushSTFunc(getTopTS(ts), $2, $1, $4, 0);
                 freeDeclArray($4);
             }
-          | VOID ID L_PAREN R_PAREN compound_statement {
-              pushSTFunc(getTopTS(ts), $2, _void, NULL, 0);
-          }
-          | VOID ID L_PAREN parameter_list R_PAREN L_BRACE {
+          | VOID ID L_PAREN R_PAREN {
+                pushSTFunc(getTopTS(ts), $2, _void, NULL, 0);
+            }
+            compound_statement 
+          | VOID ID L_PAREN parameter_list R_PAREN {
+                pushSTFunc(getTopTS(ts), $2, _void, $4, 0);
+            } L_BRACE {
                 pushTS(ts);
                 pushSTParamArray(getTopTS(ts), $4);
             }
             var_const_stmt_list R_BRACE {
                 printST(getTopTS(ts));
                 popTS(ts);
-                pushSTFunc(getTopTS(ts), $2, _void, $4, 0);
                 freeDeclArray($4);
             }
           ;
