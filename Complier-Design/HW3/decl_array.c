@@ -14,6 +14,7 @@ DeclArray_t* newDeclArrayCopy(DeclArray_t* other) {
     if (other == NULL) return NULL;
     DeclArray_t* a = malloc(sizeof(DeclArray_t));
     a->capacity = other->capacity;
+    a->size = 0;
     a->arr = malloc(sizeof(DeclItem_t*) * a->capacity);
     for (int i = 0; i < other->size; i++)
         pushDeclArray(a, newDeclItemCopy(other->arr[i]));
