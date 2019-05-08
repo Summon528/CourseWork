@@ -27,7 +27,11 @@ void printSymbolEntry(SymbolEntry_t* se, int level) {
     if (se->arr_sig != NULL) {
         char type_str[256];
         int rbuf = 256 - 1;
-        strncpy(type_str, TYPE_STR[se->type], rbuf);
+        if (se->kind == constant && se->const_val != NULL) {
+            strncpy(type_str, TYPE_STR[se->const_val->type], rbuf);
+        } else {
+            strncpy(type_str, TYPE_STR[se->type], rbuf);
+        }
         rbuf -= strlen(TYPE_STR[se->type]);
 
         for (int i = 0; i < se->arr_sig->size; i++) {
@@ -40,8 +44,13 @@ void printSymbolEntry(SymbolEntry_t* se, int level) {
         printf("%-32s %-11s%-12s%-19s", se->name, KIND_STR[se->kind], lv_str,
                type_str);
     } else {
-        printf("%-32s %-11s%-12s%-19s", se->name, KIND_STR[se->kind], lv_str,
-               TYPE_STR[se->type]);
+        if (se->kind == constant && se->const_val != NULL) {
+            printf("%-32s %-11s%-12s%-19s", se->name, KIND_STR[se->kind],
+                   lv_str, TYPE_STR[se->const_val->type]);
+        } else {
+            printf("%-32s %-11s%-12s%-19s", se->name, KIND_STR[se->kind],
+                   lv_str, TYPE_STR[se->type]);
+        }
     }
 
     if (se->kind == constant) {

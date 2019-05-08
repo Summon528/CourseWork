@@ -307,7 +307,7 @@ id *new_id();
 	}
 [0-9]+\.[0-9]+	{
 		tokenString("float", yytext);
-		yylval.literal = newLiteral(yytext, _double);
+		yylval.literal = newLiteral(yytext, _float);
 		return FLOAT_CONST;
 	}
 

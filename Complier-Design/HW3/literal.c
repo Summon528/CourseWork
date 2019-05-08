@@ -4,6 +4,7 @@
 
 Literal_t* newLiteral(char* val, Type_t type) {
     Literal_t* l = malloc(sizeof(Literal_t));
+    l->type = type;
     switch (type) {
         case _int:
             l->ival = atoi(val);
