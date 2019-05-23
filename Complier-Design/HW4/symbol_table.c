@@ -82,10 +82,15 @@ void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, DeclArray_t* da,
             panic(2, name, "redeclared");
             return;
         }
+        if (se->fun_defed) {
+            panic(2, "redefinition of", name);
+            return;
+        }
         if (!eqDeclArray(se->params, da)) {
             panic(2, "conflicting types for", name);
             return;
         }
+        se->fun_defed = true;
         return;
     }
     se = pushST(st, name);

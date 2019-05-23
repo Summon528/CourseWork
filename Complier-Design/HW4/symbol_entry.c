@@ -14,6 +14,7 @@ SymbolEntry_t* newSymbolEntry() {
     se->arr_sig = NULL;
     se->const_val = NULL;
     se->params = NULL;
+    se->fun_defed = false;
     memset(se->name, 0, sizeof(se->name));
     return se;
 }

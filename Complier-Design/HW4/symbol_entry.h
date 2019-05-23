@@ -12,6 +12,8 @@ typedef struct SymbolEntry_t {
     IntArray_t* arr_sig;
     Literal_t* const_val;
     DeclArray_t* params;
+
+    bool fun_defed;
 } SymbolEntry_t;
 
 SymbolEntry_t* newSymbolEntry();
