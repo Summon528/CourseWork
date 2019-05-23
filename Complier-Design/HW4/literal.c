@@ -28,7 +28,7 @@ Literal_t* newLiteral(char* val, Type_t type) {
     return l;
 }
 
-Literal_t* newLiteralCopy(Literal_t* other) {
+Literal_t* copyLiteral(Literal_t* other) {
     if (other == NULL) return NULL;
     Literal_t* l = malloc(sizeof(Literal_t));
     memcpy(l, other, sizeof(Literal_t));

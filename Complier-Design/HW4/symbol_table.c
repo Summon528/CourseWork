@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "extern.h"
+#include "util.h"
 
 SymbolTable_t* newSymbolTable(int level) {
     SymbolTable_t* st = malloc(sizeof(SymbolTable_t));
@@ -32,7 +33,7 @@ void pushSTVarArray(SymbolTable_t* st, DeclArray_t* da, Type_t type) {
     for (int i = 0; i < da->size; i++) {
         SymbolEntry_t* se = pushST(st, da->arr[i]->name);
         if (se == NULL) {
-            redeclared(da->arr[i]->name);
+            panic(2, da->arr[i]->name, "redeclared");
             continue;
         }
         se->kind = variable;
@@ -47,11 +48,11 @@ void pushSTConstArray(SymbolTable_t* st, DeclArray_t* da, Type_t type) {
     for (int i = 0; i < da->size; i++) {
         SymbolEntry_t* se = pushST(st, da->arr[i]->name);
         if (se == NULL) {
-            redeclared(da->arr[i]->name);
+            panic(2, da->arr[i]->name, "redeclared");
             continue;
         }
         se->kind = constant;
-        se->const_val = newLiteralCopy(da->arr[i]->val);
+        se->const_val = copyLiteral(da->arr[i]->val);
         se->arr_sig = NULL;
         se->type = type;
         se->params = NULL;
@@ -62,11 +63,11 @@ void pushSTParamArray(SymbolTable_t* st, DeclArray_t* da) {
     for (int i = 0; i < da->size; i++) {
         SymbolEntry_t* se = pushST(st, da->arr[i]->name);
         if (se == NULL) {
-            redeclared(da->arr[i]->name);
+            panic(2, da->arr[i]->name, "redeclared");
             continue;
         }
         se->kind = parameter;
-        se->const_val = newLiteralCopy(da->arr[i]->val);
+        se->const_val = copyLiteral(da->arr[i]->val);
         se->arr_sig = newIntArrayCpy(da->arr[i]->arr_sig);
         se->type = da->arr[i]->type;
         se->params = NULL;
@@ -78,7 +79,11 @@ void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, DeclArray_t* da,
     SymbolEntry_t* se = findST(st, name);
     if (se != NULL) {
         if (se->kind != function || decl) {
-            redeclared(name);
+            panic(2, name, "redeclared");
+            return;
+        }
+        if (!eqDeclArray(se->params, da)) {
+            panic(2, "conflicting types for", name);
             return;
         }
         return;
@@ -88,7 +93,7 @@ void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, DeclArray_t* da,
     se->const_val = NULL;
     se->arr_sig = NULL;
     se->type = type;
-    se->params = newDeclArrayCopy(da);
+    se->params = copyDeclArray(da);
 }
 
 SymbolEntry_t* findST(SymbolTable_t* st, char* name) {
@@ -122,9 +127,4 @@ void freeST(SymbolTable_t* st) {
     for (int i = 0; i < st->size; i++) freeSymbolEntry(st->entries[i]);
     free(st->entries);
     free(st);
-}
-
-void redeclared(char* name) {
-    printf("##########Error at Line #%d: %s redeclared.##########\n", linenum,
-           name);
 }

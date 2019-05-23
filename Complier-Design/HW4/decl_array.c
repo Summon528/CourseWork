@@ -10,14 +10,14 @@ DeclArray_t* newDeclArray() {
     return a;
 }
 
-DeclArray_t* newDeclArrayCopy(DeclArray_t* other) {
+DeclArray_t* copyDeclArray(DeclArray_t* other) {
     if (other == NULL) return NULL;
     DeclArray_t* a = malloc(sizeof(DeclArray_t));
     a->capacity = other->capacity;
     a->size = 0;
     a->arr = malloc(sizeof(DeclItem_t*) * a->capacity);
     for (int i = 0; i < other->size; i++)
-        pushDeclArray(a, newDeclItemCopy(other->arr[i]));
+        pushDeclArray(a, copyDeclItem(other->arr[i]));
     return a;
 }
 
@@ -35,4 +35,14 @@ void freeDeclArray(DeclArray_t* a) {
     for (int i = 0; i < a->size; i++) freeDeclItem(a->arr[i]);
     free(a->arr);
     free(a);
+}
+
+bool eqDeclArray(DeclArray_t* a, DeclArray_t* b) {
+    if (a == NULL && b == NULL) return true;
+    if ((a == NULL && b != NULL) || (a != NULL && b == NULL)) return false;
+    if (a->size != b->size) return false;
+    for (int i = 0; i < a->size; i++) {
+        if (!eqDeclItem(a->arr[i], b->arr[i])) return false;
+    }
+    return true;
 }

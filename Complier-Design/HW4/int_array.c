@@ -34,3 +34,13 @@ void freeIntArray(IntArray_t* a) {
     free(a->arr);
     free(a);
 }
+
+bool eqIntArray(IntArray_t* a, IntArray_t* b) {
+    if (a == NULL && b == NULL) return true;
+    if ((a == NULL && b != NULL) || (a != NULL && b == NULL)) return false;
+    if (a->size != b->size) return false;
+    for (int i = 0; i < a->size; i++) {
+        if (a->arr[i] != b->arr[i]) return false;
+    }
+    return true;
+}
