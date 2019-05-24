@@ -1,8 +1,8 @@
 #pragma once
 #include "base.h"
-#include "decl_array.h"
 #include "int_array.h"
 #include "literal.h"
+#include "param_array.h"
 
 typedef struct SymbolEntry_t {
     char name[64];
@@ -11,7 +11,7 @@ typedef struct SymbolEntry_t {
 
     IntArray_t* arr_sig;
     Literal_t* const_val;
-    DeclArray_t* params;
+    ParamArray_t* params;
 
     bool fun_defed;
 } SymbolEntry_t;

@@ -83,14 +83,14 @@ int yyerror( char *msg );
     char* text;
     Literal_t* literal;
     IntArray_t* iarray;
-    DeclItem_t* decl_item;
-    DeclArray_t* decl_array;
+    ParamItem_t* param_item;
+    ParamArray_t* param_array;
     Type_t type;
 }
 
 %type<iarray> dim dimension;
 %type<literal> literal_const;
-%type<decl_array> parameter_list;
+%type<param_array> parameter_list;
 %type<type> element logical_expression variable_reference logical_term;
 %type<type> logical_factor relation_expression arithmetic_expression;
 %type<type> term factor sign_literal_const scalar_type;
@@ -127,7 +127,7 @@ funct_def : scalar_type ID L_PAREN R_PAREN {
             var_const_stmt_list R_BRACE {
                 printST(getTopTS(ts));
                 popTS(ts);
-                freeDeclArray($4);
+                freeParamArray($4);
             }
           | VOID ID L_PAREN R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, _void, NULL, 0);
@@ -142,20 +142,20 @@ funct_def : scalar_type ID L_PAREN R_PAREN {
             var_const_stmt_list R_BRACE {
                 printST(getTopTS(ts));
                 popTS(ts);
-                freeDeclArray($4);
+                freeParamArray($4);
             }
           ;
 
 funct_decl : scalar_type ID L_PAREN R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts), $2, $1, NULL, 1); }
-           | scalar_type ID L_PAREN parameter_list R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts), $2, $1, $4, 1), freeDeclArray($4); }
+           | scalar_type ID L_PAREN parameter_list R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts), $2, $1, $4, 1), freeParamArray($4); }
            | VOID ID L_PAREN R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts), $2, _void, NULL, 1); }
-           | VOID ID L_PAREN parameter_list R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts), $2, _void, $4, 1), freeDeclArray($4); }
+           | VOID ID L_PAREN parameter_list R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts), $2, _void, $4, 1), freeParamArray($4); }
            ;
 
-parameter_list : parameter_list COMMA scalar_type ID { $$ = pushDeclArray($1, newDeclItem($4, $3, NULL)); }
-               | parameter_list COMMA scalar_type ID dim { $$ = pushDeclArray($1, newDeclItem($4, $3, $5)); }
-               | scalar_type ID dim { $$ = pushDeclArray(newDeclArray(), newDeclItem($2, $1, $3)); }
-               | scalar_type ID { $$ = pushDeclArray(newDeclArray(), newDeclItem($2, $1, NULL)); }
+parameter_list : parameter_list COMMA scalar_type ID { $$ = pushDeclArray($1, newParamItem($4, $3, NULL)); }
+               | parameter_list COMMA scalar_type ID dim { $$ = pushDeclArray($1, newParamItem($4, $3, $5)); }
+               | scalar_type ID dim { $$ = pushDeclArray(newParamArray(), newParamItem($2, $1, $3)); }
+               | scalar_type ID { $$ = pushDeclArray(newParamArray(), newParamItem($2, $1, NULL)); }
                ;
 
 var_decl : scalar_type identifier_list SEMICOLON

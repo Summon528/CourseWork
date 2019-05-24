@@ -97,6 +97,6 @@ void printSymbolEntry(SymbolEntry_t* se, int level) {
 
 void freeSymbolEntry(SymbolEntry_t* se) {
     freeIntArray(se->arr_sig);
-    freeDeclArray(se->params);
+    freeParamArray(se->params);
     free(se);
 }

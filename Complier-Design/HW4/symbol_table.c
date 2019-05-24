@@ -55,7 +55,7 @@ void pushSTConst(SymbolTable_t* st, char* name, Literal_t* lit) {
     se->params = NULL;
 }
 
-void pushSTParamArray(SymbolTable_t* st, DeclArray_t* da) {
+void pushSTParamArray(SymbolTable_t* st, ParamArray_t* da) {
     for (int i = 0; i < da->size; i++) {
         SymbolEntry_t* se = pushST(st, da->arr[i]->name);
         if (se == NULL) {
@@ -69,7 +69,7 @@ void pushSTParamArray(SymbolTable_t* st, DeclArray_t* da) {
     }
 }
 
-void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, DeclArray_t* da,
+void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, ParamArray_t* da,
                 int decl) {
     SymbolEntry_t* se = findST(st, name);
     if (se != NULL) {
@@ -81,7 +81,7 @@ void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, DeclArray_t* da,
             panic(2, "redefinition of", name);
             return;
         }
-        if (!eqDeclArray(se->params, da)) {
+        if (!eqParamArray(se->params, da)) {
             panic(2, "conflicting types for", name);
             return;
         }
@@ -93,7 +93,7 @@ void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, DeclArray_t* da,
     se->const_val = NULL;
     se->arr_sig = NULL;
     se->type = type;
-    se->params = copyDeclArray(da);
+    se->params = copyParamArray(da);
 }
 
 SymbolEntry_t* findST(SymbolTable_t* st, char* name) {
