@@ -30,9 +30,6 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/parser",
-            "args": [
-                "test.cm"
-            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

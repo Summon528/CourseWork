@@ -7,7 +7,6 @@ typedef enum type {
     _bool,
     _string,
     _void,
-    _array,
     _function,
     _unknown
 } Type_t;

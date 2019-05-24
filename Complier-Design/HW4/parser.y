@@ -86,14 +86,16 @@ int yyerror( char *msg );
     ParamItem_t* param_item;
     ParamArray_t* param_array;
     Type_t type;
+    TypeStruct_t* type_struct;
 }
 
 %type<iarray> dim dimension;
 %type<literal> literal_const;
 %type<param_array> parameter_list;
-%type<type> element logical_expression variable_reference logical_term;
-%type<type> logical_factor relation_expression arithmetic_expression;
-%type<type> term factor sign_literal_const scalar_type;
+%type<type_struct> element logical_expression variable_reference logical_term;
+%type<type_struct> logical_factor relation_expression arithmetic_expression;
+%type<type_struct> term factor sign_literal_const;
+%type<type> scalar_type;
 %start program
 %%
 
@@ -152,21 +154,33 @@ funct_decl : scalar_type ID L_PAREN R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts),
            | VOID ID L_PAREN parameter_list R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts), $2, _void, $4, 1), freeParamArray($4); }
            ;
 
-parameter_list : parameter_list COMMA scalar_type ID { $$ = pushDeclArray($1, newParamItem($4, $3, NULL)); }
-               | parameter_list COMMA scalar_type ID dim { $$ = pushDeclArray($1, newParamItem($4, $3, $5)); }
-               | scalar_type ID dim { $$ = pushDeclArray(newParamArray(), newParamItem($2, $1, $3)); }
-               | scalar_type ID { $$ = pushDeclArray(newParamArray(), newParamItem($2, $1, NULL)); }
+parameter_list : parameter_list COMMA scalar_type ID { $$ = pushParamArray($1, newParamItem($4, $3, NULL)); }
+               | parameter_list COMMA scalar_type ID dim { $$ = pushParamArray($1, newParamItem($4, $3, $5)); }
+               | scalar_type ID dim { $$ = pushParamArray(newParamArray(), newParamItem($2, $1, $3)); }
+               | scalar_type ID { $$ = pushParamArray(newParamArray(), newParamItem($2, $1, NULL)); }
                ;
 
 var_decl : scalar_type identifier_list SEMICOLON
 
 identifier_list : identifier_list COMMA ID { pushSTVar(getTopTS(ts), $3, NULL); }
-                | identifier_list COMMA ID ASSIGN_OP logical_expression { checkAssign(variable, cur_type, $5); pushSTVar(getTopTS(ts), $3, NULL); }
+                | identifier_list COMMA ID ASSIGN_OP logical_expression {
+                    TypeStruct_t* tmp = newTypeStruct1(cur_type);
+                    checkAssign(variable, tmp, $5);
+                    pushSTVar(getTopTS(ts), $3, NULL);
+                    freeTypeStruct(tmp);
+                    freeTypeStruct($5);
+                }
                 | identifier_list COMMA ID dim ASSIGN_OP initial_array { pushSTVar(getTopTS(ts), $3, $4); }
                 | identifier_list COMMA ID dim { pushSTVar(getTopTS(ts), $3, $4); }
                 | ID dim ASSIGN_OP initial_array { pushSTVar(getTopTS(ts), $1, $2); }
                 | ID dim { pushSTVar(getTopTS(ts), $1, $2); }
-                | ID ASSIGN_OP logical_expression { checkAssign(variable, cur_type, $3); pushSTVar(getTopTS(ts), $1, NULL); }
+                | ID ASSIGN_OP logical_expression {
+                    TypeStruct_t* tmp = newTypeStruct1(cur_type);
+                    checkAssign(variable, tmp, $3);
+                    pushSTVar(getTopTS(ts), $1, NULL);
+                    freeTypeStruct(tmp);
+                    freeTypeStruct($3);
+                }
                 | ID { pushSTVar(getTopTS(ts), $1, NULL); }
                 ;
 
@@ -255,8 +269,18 @@ increment_expression : increment_expression COMMA var_assign
                      | var_assign
                      ;
 
-var_assign : ID ASSIGN_OP logical_expression { checkAssign(findTS(ts, $1)->kind, getType(ts, $1, NULL, false), $3); }
-           | ID dimension ASSIGN_OP logical_expression { checkAssign(findTS(ts, $1)->kind, getType(ts, $1, $2, false), $4); }
+var_assign : ID ASSIGN_OP logical_expression { 
+                TypeStruct_t* tmp = getType(ts, $1, NULL, false);
+                checkAssign(findTS(ts, $1)->kind, tmp, $3); 
+                freeTypeStruct(tmp);
+                freeTypeStruct($3);
+           }
+           | ID dimension ASSIGN_OP logical_expression {
+                TypeStruct_t* tmp = getType(ts, $1, $2, false);
+                checkAssign(findTS(ts, $1)->kind, tmp, $4); 
+                freeTypeStruct(tmp);
+                freeTypeStruct($4);
+            }
            ;
 
 function_invoke_statement : ID L_PAREN logical_expression_list R_PAREN SEMICOLON
@@ -273,21 +297,21 @@ variable_reference : ID dimension { $$ = getType(ts, $1, $2, false); }
                    ;
 
 
-logical_expression : logical_expression OR_OP logical_term { $$ = checkLogic($1, $3); }
+logical_expression : logical_expression OR_OP logical_term { $$ = checkLogic($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
                    | logical_term
                    ;
 
-logical_term : logical_term AND_OP logical_factor { $$ = checkLogic($1, $3); }
+logical_term : logical_term AND_OP logical_factor { $$ = checkLogic($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
              | logical_factor
              ;
 
-logical_factor : NOT_OP logical_factor { $$ = checkULogic($2); }
+logical_factor : NOT_OP logical_factor { $$ = checkULogic($2), freeTypeStruct($2); }
                | relation_expression
                ;
 
-relation_expression : relation_expression relation_operator arithmetic_expression { $$ = checkRelation($1, $3); }
-                    | relation_expression NE_OP arithmetic_expression { $$ = checkEQNEQ($1, $3); }
-                    | relation_expression EQ_OP arithmetic_expression { $$ = checkEQNEQ($1, $3); }
+relation_expression : relation_expression relation_operator arithmetic_expression { $$ = checkRelation($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
+                    | relation_expression NE_OP arithmetic_expression { $$ = checkEQNEQ($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
+                    | relation_expression EQ_OP arithmetic_expression { $$ = checkEQNEQ($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
                     | arithmetic_expression
                     ;
 
@@ -297,14 +321,14 @@ relation_operator : LT_OP
                   | GT_OP
                   ;
 
-arithmetic_expression : arithmetic_expression ADD_OP term { $$ = checkArith($1, $3); }
-                      | arithmetic_expression SUB_OP term { $$ = checkArith($1, $3); }
+arithmetic_expression : arithmetic_expression ADD_OP term { $$ = checkArith($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
+                      | arithmetic_expression SUB_OP term { $$ = checkArith($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
                       | term
                       ;
 
-term : term MUL_OP factor { $$ = checkArith($1, $3); }
-     | term DIV_OP factor { $$ = checkArith($1, $3); }
-     | term MOD_OP factor { $$ = checkMod($1, $3); }
+term : term MUL_OP factor { $$ = checkArith($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
+     | term DIV_OP factor { $$ = checkArith($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
+     | term MOD_OP factor { $$ = checkMod($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
      | factor
      ;
 
@@ -312,7 +336,7 @@ factor : sign_literal_const
        | element
        ;
 
-element : SUB_OP element { $$ = checkUMinus($2); }
+element : SUB_OP element { $$ = checkUMinus($2), freeTypeStruct($2); }
         | variable_reference
         | L_PAREN logical_expression R_PAREN { $$ = $2; }
         | ID L_PAREN logical_expression_list R_PAREN { $$ = getType(ts, $1, NULL, true); }
@@ -326,8 +350,8 @@ logical_expression_list : logical_expression_list COMMA logical_expression
                         ;
 
 
-dimension : dimension ML_BRACE logical_expression MR_BRACE { checkArraySubscript($3), $$ = pushIntArray($1, 0); }
-          | ML_BRACE logical_expression MR_BRACE { checkArraySubscript($2), $$ = pushIntArray(newIntArray(), 0); }
+dimension : dimension ML_BRACE logical_expression MR_BRACE { checkArraySubscript($3), freeTypeStruct($3), $$ = pushIntArray($1, 0); }
+          | ML_BRACE logical_expression MR_BRACE { checkArraySubscript($2), freeTypeStruct($2), $$ = pushIntArray(newIntArray(), 0); }
           ;
 
 
@@ -339,8 +363,8 @@ scalar_type : INT { $$ = cur_type = $1; }
             | FLOAT { $$ = cur_type = $1; }
             ;
 
-sign_literal_const : SUB_OP sign_literal_const { $$ = checkUMinus($2); }
-                   | literal_const { $$ = $1->type; }
+sign_literal_const : SUB_OP sign_literal_const { $$ = checkUMinus($2), freeTypeStruct($2); }
+                   | literal_const { $$ = newTypeStruct1($1->type); }
                    ;
 
 literal_const : INT_CONST

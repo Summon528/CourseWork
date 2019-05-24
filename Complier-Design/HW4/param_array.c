@@ -17,11 +17,11 @@ ParamArray_t* copyParamArray(ParamArray_t* other) {
     a->size = 0;
     a->arr = malloc(sizeof(ParamItem_t*) * a->capacity);
     for (int i = 0; i < other->size; i++)
-        pushDeclArray(a, copyParamItem(other->arr[i]));
+        pushParamArray(a, copyParamItem(other->arr[i]));
     return a;
 }
 
-ParamArray_t* pushDeclArray(ParamArray_t* a, ParamItem_t* val) {
+ParamArray_t* pushParamArray(ParamArray_t* a, ParamItem_t* val) {
     if (a->capacity < a->size + 1) {
         a->capacity *= 2;
         a->arr = realloc(a->arr, sizeof(ParamItem_t*) * a->capacity);

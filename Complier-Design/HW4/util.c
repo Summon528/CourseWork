@@ -2,161 +2,177 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "extern.h"
+#include "string.h"
+#include "type_struct.h"
 
-static const char* TYPE_STR[] = {"int",   "float",    "double",
-                                 "bool",  "string",   "void",
-                                 "array", "function", "unknown"};
+static const char* TYPE_STR[] = {"int",    "float", "double",   "bool",
+                                 "string", "void",  "function", "unknown"};
 
 static const char* KIND_STR[] = {"function", "parameter", "variable",
                                  "constant"};
 
-void panic(int cnt, ...) {
+void panic(char* fmt, ...) {
     va_list valist;
-    va_start(valist, cnt);
+    va_start(valist, fmt);
     printf("##########Error at Line #%d: ", linenum);
-    for (int i = 0; i < cnt; i++) {
-        if (i != 0) putchar(' ');
-        printf("%s", va_arg(valist, char*));
+    for (char* c = fmt; *c != '\0'; c++) {
+        if (*c == ' ') putchar(' ');
+        if (*c == 's') printf("%s", va_arg(valist, char*));
+        if (*c == 't') {
+            TypeStruct_t* tys = va_arg(valist, TypeStruct_t*);
+            char type_str[256] = {};
+            int rbuf = 256 - 1;
+            strncpy(type_str, TYPE_STR[tys->type], rbuf);
+            rbuf -= strlen(TYPE_STR[tys->type]);
+            if (tys->arr != NULL) {
+                for (int i = 0; i < tys->arr->size; i++) {
+                    char tmp[64];
+                    snprintf(tmp, sizeof(tmp), "[%d]", tys->arr->arr[i]);
+                    strncat(type_str, tmp, rbuf);
+                    rbuf -= strlen(tmp);
+                }
+            }
+            printf("%s", type_str);
+        }
     }
     puts("##########");
     va_end(valist);
 }
 
-Type_t getType(TableStack_t* ts, char* name, IntArray_t* arr, bool invoke) {
+TypeStruct_t* getType(TableStack_t* ts, char* name, IntArray_t* arr,
+                      bool invoke) {
     SymbolEntry_t* target = findTS(ts, name);
     if (target == NULL) {
-        panic(2, "use of undeclared identifier", name);
-        return _unknown;
+        panic("s s", "use of undeclared identifier", name);
+        return newTypeStruct1(_unknown);
     }
     if (target->kind == function && !invoke) {
-        return _function;
+        return newTypeStruct1(_function);
     }
     int arr_sig1 = target->arr_sig == NULL ? 0 : target->arr_sig->size;
     int arr_sig2 = arr == NULL ? 0 : arr->size;
     if (arr_sig1 == arr_sig2) {
-        return target->type;
+        return newTypeStruct1(target->type);
     } else if (arr_sig1 > arr_sig2) {
-        return _array;
+        return newTypeStruct2(target->type, target->arr_sig, arr_sig2);
     } else {
-        panic(3, "subscripted value is not an array (", name, ")");
-        return _unknown;
+        panic("s s s", "subscripted value is not an array (", name, ")");
+        return newTypeStruct1(_unknown);
     }
 }
 
-Type_t checkUMinus(Type_t t) {
-    switch (t) {
-        case _unknown:
-            return _unknown;
-        case _int:
-        case _float:
-        case _double:
-            return t;
-        default:
-            panic(3, "invalid argument type", TYPE_STR[t],
-                  "to unary minus expression");
-            return _unknown;
+TypeStruct_t* checkUMinus(TypeStruct_t* t) {
+    if (eqType1(t, _unknown)) {
+        return newTypeStruct1(_unknown);
+    } else if (eqType1(t, _int) || eqType1(t, _float) || eqType1(t, _double)) {
+        return newTypeStruct1(t->type);
+    } else {
+        panic("s t s", "invalid argument type", t, "to unary minus expression");
+        return newTypeStruct1(_unknown);
     }
 }
 
-Type_t checkULogic(Type_t a) {
-    if (a == _bool) return _bool;
-    if (a != _unknown) {
-        panic(3, "invalid argument type", TYPE_STR[a],
-              "to unary not expression");
+TypeStruct_t* checkULogic(TypeStruct_t* a) {
+    if (eqType1(a, _bool)) return newTypeStruct1(_bool);
+    if (!eqType1(a, _unknown)) {
+        panic("s t s", "invalid argument type", a, "to unary not expression");
     }
-    return _unknown;
+    return newTypeStruct1(_unknown);
 }
 
-Type_t checkLogic(Type_t a, Type_t b) {
-    if (a == _bool && b == _bool) return _bool;
-    if (a != _unknown && b != _unknown) {
-        panic(5, "invalid operands to logical expression (", TYPE_STR[a], "and",
-              TYPE_STR[b], ")");
+TypeStruct_t* checkLogic(TypeStruct_t* a, TypeStruct_t* b) {
+    if (eqType1(a, _bool) && eqType1(b, _bool)) return newTypeStruct1(_bool);
+    if (!eqType1(a, _unknown) && !eqType1(b, _unknown)) {
+        panic("s t s t s", "invalid operands to logical expression (", a, "and",
+              b, ")");
     }
-    return _unknown;
+    return newTypeStruct1(_unknown);
 }
 
-Type_t checkRelation(Type_t a, Type_t b) {
-    promoteType2(&a, &b);
-    if (a != b ||
-        !(a == _int || a == _float || a == _double || a == _unknown)) {
-        panic(5, "invalid operands to relation expression (", TYPE_STR[a],
-              "and", TYPE_STR[b], ")");
-        return _unknown;
+TypeStruct_t* checkRelation(TypeStruct_t* a, TypeStruct_t* b) {
+    promoteType2(a, b);
+    if (!eqType2(a, b) || !(eqType1(a, _int) || eqType1(a, _float) ||
+                            eqType1(a, _double) || eqType1(a, _unknown))) {
+        panic("s t s t s", "invalid operands to relation expression (", a,
+              "and", b, ")");
+        return newTypeStruct1(_unknown);
     }
-    return _bool;
+    return newTypeStruct1(_bool);
 }
 
-Type_t checkEQNEQ(Type_t a, Type_t b) {
-    promoteType2(&a, &b);
-    if (a != b || !(a == _int || a == _float || a == _double || a == _bool ||
-                    a == _unknown)) {
-        panic(5, "invalid operands to equality expression (", TYPE_STR[a],
-              "and", TYPE_STR[b], ")");
-        return _unknown;
+TypeStruct_t* checkEQNEQ(TypeStruct_t* a, TypeStruct_t* b) {
+    promoteType2(a, b);
+    if (!eqType2(a, b) ||
+        !(eqType1(a, _int) || eqType1(a, _float) || eqType1(a, _double) ||
+          eqType1(a, _unknown) || eqType1(a, _bool))) {
+        panic("s t s t s", "invalid operands to equality expression (", a,
+              "and", b, ")");
+        return newTypeStruct1(_unknown);
     }
-    return _bool;
+    return newTypeStruct1(_bool);
 }
 
-Type_t checkArith(Type_t a, Type_t b) {
-    promoteType2(&a, &b);
-    if (a != b ||
-        !(a == _int || a == _float || a == _double || a == _unknown)) {
-        panic(5, "invalid operands to arithmetic expression (", TYPE_STR[a],
-              "and", TYPE_STR[b], ")");
-        return _unknown;
+TypeStruct_t* checkArith(TypeStruct_t* a, TypeStruct_t* b) {
+    promoteType2(a, b);
+    if (!eqType2(a, b) || !(eqType1(a, _int) || eqType1(a, _float) ||
+                            eqType1(a, _double) || eqType1(a, _unknown))) {
+        panic("s t s t s", "invalid operands to arithmetic expression (", a,
+              "and", b, ")");
+        return newTypeStruct1(_unknown);
     }
-    return a;
+    return newTypeStruct1(a->type);
 }
 
-Type_t checkMod(Type_t a, Type_t b) {
-    if (a == _int && b == _int) return _int;
-    if (a != _unknown && b != _unknown) {
-        panic(5, "invalid operands to mod expression (", TYPE_STR[a], "and",
-              TYPE_STR[b], ")");
+TypeStruct_t* checkMod(TypeStruct_t* a, TypeStruct_t* b) {
+    if (eqType1(a, _int) && eqType1(b, _int)) return newTypeStruct1(_int);
+    if (!eqType1(a, _unknown) && !eqType1(b, _unknown)) {
+        panic("s t s t s", "invalid operands to mod expression (", a, "and", b,
+              ")");
     }
-    return _unknown;
+    return newTypeStruct1(_unknown);
 }
 
-Type_t checkArraySubscript(Type_t a) {
-    if (a == _int) return _int;
-    if (a != _unknown) panic(1, "array subscript is not an integer");
-    return _unknown;
+TypeStruct_t* checkArraySubscript(TypeStruct_t* a) {
+    if (eqType1(a, _int)) return newTypeStruct1(_int);
+    if (!eqType1(a, _unknown))
+        panic("s t s", "array subscript is not an integer (", a, ")");
+    return newTypeStruct1(_unknown);
 }
 
-void checkAssign(Kind_t k, Type_t a, Type_t b) {
+void checkAssign(Kind_t k, TypeStruct_t* a, TypeStruct_t* b) {
     if (k == constant || k == function) {
-        panic(2, KIND_STR[k], "is not assignable");
+        panic("s s", KIND_STR[k], "is not assignable");
         return;
     }
-    promoteType1(&b, a);
-    if (a != b || !(a == _int || a == _float || a == _double || a == _bool ||
-                    a == _string)) {
-        if (b == _unknown) return;
-        panic(5, "invalid operands to assignment expression (", TYPE_STR[a],
-              "and", TYPE_STR[b], ")");
+    promoteType1(b, a);
+    if (!eqType2(a, b) ||
+        !(eqType1(a, _int) || eqType1(a, _float) || eqType1(a, _double) ||
+          eqType1(a, _bool) || eqType1(a, _string))) {
+        if (eqType1(b, _unknown)) return;
+        panic("s t s t s", "invalid operands to assignment expression (", a,
+              "and", b, ")");
         return;
     }
     return;
 }
 
-void promoteType1(Type_t* a, Type_t target) {
-    if (target == *a) return;
-    if (target == _unknown || *a == _unknown) {
-        target = *a = _unknown;
+void promoteType1(TypeStruct_t* a, TypeStruct_t* target) {
+    if (eqType2(a, target)) return;
+    if (eqType1(target, _unknown) || eqType1(a, _unknown)) {
+        a->type = _unknown;
         return;
     }
-    if (target == _double && (*a == _int || *a == _float)) {
-        *a = _double;
+    if (eqType1(target, _double) && (eqType1(a, _int) || eqType1(a, _float))) {
+        a->type = _double;
         return;
     }
-    if (target == _float && *a == _int) {
-        *a = _float;
+    if (eqType1(target, _float) && eqType1(a, _int)) {
+        a->type = _float;
         return;
     }
 }
 
-void promoteType2(Type_t* a, Type_t* b) {
-    promoteType1(a, *b);
-    promoteType1(b, *a);
+void promoteType2(TypeStruct_t* a, TypeStruct_t* b) {
+    promoteType1(a, b);
+    promoteType1(b, a);
 }

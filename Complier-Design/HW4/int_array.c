@@ -44,3 +44,13 @@ bool eqIntArray(IntArray_t* a, IntArray_t* b) {
     }
     return true;
 }
+
+IntArray_t* copyIntArray(IntArray_t* other, int st) {
+    if (other == NULL || st >= other->size) return NULL;
+    IntArray_t* a = malloc(sizeof(IntArray_t));
+    a->capacity = INITIAL_CAPACITY;
+    a->size = 0;
+    a->arr = malloc(sizeof(IntArray_t*) * INITIAL_CAPACITY);
+    for (int i = st; i < other->size; i++) pushIntArray(a, other->arr[i]);
+    return a;
+}

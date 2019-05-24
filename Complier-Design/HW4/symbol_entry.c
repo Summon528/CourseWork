@@ -6,9 +6,8 @@
 
 static const char* KIND_STR[] = {"function", "parameter", "variable",
                                  "constant"};
-static const char* TYPE_STR[] = {"int",   "float",    "double",
-                                 "bool",  "string",   "void",
-                                 "array", "function", "unknown"};
+static const char* TYPE_STR[] = {"int",    "float", "double",   "bool",
+                                 "string", "void",  "function", "unknown"};
 
 SymbolEntry_t* newSymbolEntry() {
     SymbolEntry_t* se = (SymbolEntry_t*)malloc(sizeof(SymbolEntry_t));

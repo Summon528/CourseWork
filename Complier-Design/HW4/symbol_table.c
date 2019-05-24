@@ -32,7 +32,7 @@ SymbolEntry_t* pushST(SymbolTable_t* st, char* name) {
 void pushSTVar(SymbolTable_t* st, char* name, IntArray_t* arr) {
     SymbolEntry_t* se = pushST(st, name);
     if (se == NULL) {
-        panic(2, name, "redeclared");
+        panic("s s", name, "redeclared");
         return;
     }
     se->kind = variable;
@@ -45,7 +45,7 @@ void pushSTVar(SymbolTable_t* st, char* name, IntArray_t* arr) {
 void pushSTConst(SymbolTable_t* st, char* name, Literal_t* lit) {
     SymbolEntry_t* se = pushST(st, name);
     if (se == NULL) {
-        panic(2, name, "redeclared");
+        panic("s s", name, "redeclared");
         return;
     }
     se->kind = constant;
@@ -59,7 +59,7 @@ void pushSTParamArray(SymbolTable_t* st, ParamArray_t* da) {
     for (int i = 0; i < da->size; i++) {
         SymbolEntry_t* se = pushST(st, da->arr[i]->name);
         if (se == NULL) {
-            panic(2, da->arr[i]->name, "redeclared");
+            panic("s s", da->arr[i]->name, "redeclared");
             continue;
         }
         se->kind = parameter;
@@ -74,15 +74,15 @@ void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, ParamArray_t* da,
     SymbolEntry_t* se = findST(st, name);
     if (se != NULL) {
         if (se->kind != function || decl) {
-            panic(2, name, "redeclared");
+            panic("s s", name, "redeclared");
             return;
         }
         if (se->fun_defed) {
-            panic(2, "redefinition of", name);
+            panic("s s", "redefinition of", name);
             return;
         }
         if (!eqParamArray(se->params, da)) {
-            panic(2, "conflicting types for", name);
+            panic("s s", "conflicting types for", name);
             return;
         }
         se->fun_defed = true;

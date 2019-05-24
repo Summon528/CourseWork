@@ -10,6 +10,6 @@ typedef struct paramarray {
 
 ParamArray_t* newParamArray();
 ParamArray_t* copyParamArray(ParamArray_t* other);
-ParamArray_t* pushDeclArray(ParamArray_t* a, ParamItem_t* val);
+ParamArray_t* pushParamArray(ParamArray_t* a, ParamItem_t* val);
 void freeParamArray(ParamArray_t* a);
 bool eqParamArray(ParamArray_t* a, ParamArray_t* b);
