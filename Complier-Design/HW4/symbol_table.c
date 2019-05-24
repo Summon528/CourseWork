@@ -63,7 +63,6 @@ void pushSTParamArray(SymbolTable_t* st, DeclArray_t* da) {
             continue;
         }
         se->kind = parameter;
-        se->const_val = copyLiteral(da->arr[i]->val);
         se->arr_sig = newIntArrayCpy(da->arr[i]->arr_sig);
         se->type = da->arr[i]->type;
         se->params = NULL;

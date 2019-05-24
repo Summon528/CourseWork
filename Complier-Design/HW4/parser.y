@@ -89,9 +89,8 @@ int yyerror( char *msg );
 }
 
 %type<iarray> dim dimension;
-%type<decl_item> array_decl;
 %type<literal> literal_const;
-%type<decl_array> identifier_list const_list parameter_list;
+%type<decl_array> parameter_list;
 %type<type> element logical_expression variable_reference logical_term;
 %type<type> logical_factor relation_expression arithmetic_expression;
 %type<type> term factor sign_literal_const scalar_type;
@@ -153,10 +152,10 @@ funct_decl : scalar_type ID L_PAREN R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts),
            | VOID ID L_PAREN parameter_list R_PAREN SEMICOLON { pushSTFunc(getTopTS(ts), $2, _void, $4, 1), freeDeclArray($4); }
            ;
 
-parameter_list : parameter_list COMMA scalar_type ID { $$ = pushDeclArray($1, newDeclItemParam($4, $3)); }
-               | parameter_list COMMA scalar_type array_decl { $4->type = $3, $$ = pushDeclArray($1, $4); }
-               | scalar_type array_decl { $2->type = $1, $$ = pushDeclArray(newDeclArray(), $2); }
-               | scalar_type ID { $$ = pushDeclArray(newDeclArray(), newDeclItemParam($2, $1)); }
+parameter_list : parameter_list COMMA scalar_type ID { $$ = pushDeclArray($1, newDeclItem($4, $3, NULL)); }
+               | parameter_list COMMA scalar_type ID dim { $$ = pushDeclArray($1, newDeclItem($4, $3, $5)); }
+               | scalar_type ID dim { $$ = pushDeclArray(newDeclArray(), newDeclItem($2, $1, $3)); }
+               | scalar_type ID { $$ = pushDeclArray(newDeclArray(), newDeclItem($2, $1, NULL)); }
                ;
 
 var_decl : scalar_type identifier_list SEMICOLON
@@ -183,9 +182,6 @@ const_decl : CONST scalar_type const_list SEMICOLON
 
 const_list : const_list COMMA ID ASSIGN_OP literal_const { pushSTConst(getTopTS(ts), $3, $5); }
            | ID ASSIGN_OP literal_const { pushSTConst(getTopTS(ts), $1, $3); }
-           ;
-
-array_decl : ID dim { $$ = newArrDecl($1, $2); }
            ;
 
 dim : dim ML_BRACE INT_CONST MR_BRACE { $$ = pushIntArray($1, $3->ival); }

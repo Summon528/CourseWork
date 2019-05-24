@@ -8,9 +8,5 @@
         "*.o": true,
         "y.tab.*": true,
         "lex.yy.c": true,
-    },
-    "files.associations": {
-        "decl_array.h": "c",
-        "string.h": "c"
     }
 }
