@@ -121,27 +121,35 @@ Type_t checkArraySubscript(Type_t a) {
     return _unknown;
 }
 
-void promoteType2(Type_t* a, Type_t* b) {
-    if (*a == *b) return;
-    if (*a == _unknown || *b == _unknown) {
-        *a = *b = _unknown;
-        return;
-    }
-    if (*a == _double && (*b == _int || *b == _float)) {
-        *b = _double;
-        return;
-    }
-    if (*a == _float && *b == _int) {
-        *b = _float;
-        return;
-    }
-    if (*b == _double && (*a == _int || *a == _float)) {
-        *a = _double;
-        return;
-    }
-    if (*b == _float && *a == _int) {
-        *a = _float;
+void checkAssign(Type_t a, Type_t b) {
+    promoteType1(&b, a);
+    if (a != b || !(a == _int || a == _float || a == _double || a == _bool ||
+                    a == _string)) {
+        if (b == _unknown) return;
+        panic(5, "invalid operands to assignment expression (", TYPE_STR[a],
+              "and", TYPE_STR[b], ")");
         return;
     }
     return;
+}
+
+void promoteType1(Type_t* a, Type_t target) {
+    if (target == *a) return;
+    if (target == _unknown || *a == _unknown) {
+        target = *a = _unknown;
+        return;
+    }
+    if (target == _double && (*a == _int || *a == _float)) {
+        *a = _double;
+        return;
+    }
+    if (target == _float && *a == _int) {
+        *a = _float;
+        return;
+    }
+}
+
+void promoteType2(Type_t* a, Type_t* b) {
+    promoteType1(a, *b);
+    promoteType1(b, *a);
 }
