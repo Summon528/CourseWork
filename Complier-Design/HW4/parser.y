@@ -9,6 +9,7 @@ extern FILE *yyin;
 extern char *yytext;
 extern char buf[256];
 extern TableStack_t* ts;
+extern Type_t cur_type;
 
 int yylex();
 int yyerror( char *msg );
@@ -37,13 +38,13 @@ int yyerror( char *msg );
 %token<literal>  TRUE
 %token<literal>  FALSE
 %token  FOR
-%token<kind>  INT
+%token<type>  INT
 %token  PRINT
-%token<kind>  BOOL
+%token<type>  BOOL
 %token  VOID
-%token<kind>  FLOAT
-%token<kind>  DOUBLE
-%token<kind>  STRING
+%token<type>  FLOAT
+%token<type>  DOUBLE
+%token<type>  STRING
 %token  CONTINUE
 %token  BREAK
 %token  RETURN
@@ -84,7 +85,6 @@ int yyerror( char *msg );
     IntArray_t* iarray;
     DeclItem_t* decl_item;
     DeclArray_t* decl_array;
-    Kind_t kind;
     Type_t type;
 }
 
@@ -92,10 +92,9 @@ int yyerror( char *msg );
 %type<decl_item> array_decl;
 %type<literal> literal_const;
 %type<decl_array> identifier_list const_list parameter_list;
-%type<kind> scalar_type;
 %type<type> element logical_expression variable_reference logical_term;
 %type<type> logical_factor relation_expression arithmetic_expression;
-%type<type> term factor sign_literal_const;
+%type<type> term factor sign_literal_const scalar_type;
 %start program
 %%
 
@@ -160,20 +159,16 @@ parameter_list : parameter_list COMMA scalar_type ID { $$ = pushDeclArray($1, ne
                | scalar_type ID { $$ = pushDeclArray(newDeclArray(), newDeclItemParam($2, $1)); }
                ;
 
-var_decl : 
-    scalar_type identifier_list SEMICOLON { 
-        pushSTVarArray(getTopTS(ts), $2, $1); 
-        freeDeclArray($2);
-    };
+var_decl : scalar_type identifier_list SEMICOLON
 
-identifier_list : identifier_list COMMA ID  { $$ = pushDeclArray($1, newDeclItem($3)); }
-                | identifier_list COMMA ID ASSIGN_OP logical_expression { $$ = pushDeclArray($1, newDeclItem($3)); }
-                | identifier_list COMMA array_decl ASSIGN_OP initial_array  { $$ = pushDeclArray($1, $3); }
-                | identifier_list COMMA array_decl { $$ = pushDeclArray($1, $3); }
-                | array_decl ASSIGN_OP initial_array { $$ = pushDeclArray(newDeclArray(), $1); }
-                | array_decl { $$ = pushDeclArray(newDeclArray(), $1); }
-                | ID ASSIGN_OP logical_expression { $$ = pushDeclArray(newDeclArray(), newDeclItem($1)); }
-                | ID { $$ = pushDeclArray(newDeclArray(), newDeclItem($1)); }
+identifier_list : identifier_list COMMA ID { pushSTVar(getTopTS(ts), $3, NULL); }
+                | identifier_list COMMA ID ASSIGN_OP logical_expression { pushSTVar(getTopTS(ts), $3, NULL); }
+                | identifier_list COMMA ID dim ASSIGN_OP initial_array { pushSTVar(getTopTS(ts), $3, $4); }
+                | identifier_list COMMA ID dim { pushSTVar(getTopTS(ts), $3, $4); }
+                | ID dim ASSIGN_OP initial_array { pushSTVar(getTopTS(ts), $1, $2); }
+                | ID dim { pushSTVar(getTopTS(ts), $1, $2); }
+                | ID ASSIGN_OP logical_expression { pushSTVar(getTopTS(ts), $1, NULL); }
+                | ID { pushSTVar(getTopTS(ts), $1, NULL); }
                 ;
 
 initial_array : L_BRACE literal_list R_BRACE
@@ -184,14 +179,10 @@ literal_list : literal_list COMMA logical_expression
              | 
              ;
 
-const_decl :
-    CONST scalar_type const_list SEMICOLON {
-        pushSTConstArray(getTopTS(ts), $3, $2); 
-        freeDeclArray($3);
-    };
+const_decl : CONST scalar_type const_list SEMICOLON
 
-const_list : const_list COMMA ID ASSIGN_OP literal_const { $$ = pushDeclArray($1, newDeclItemConst($3, $5)); }
-           | ID ASSIGN_OP literal_const { $$ = pushDeclArray(newDeclArray(), newDeclItemConst($1, $3)); }
+const_list : const_list COMMA ID ASSIGN_OP literal_const { pushSTConst(getTopTS(ts), $3, $5); }
+           | ID ASSIGN_OP literal_const { pushSTConst(getTopTS(ts), $1, $3); }
            ;
 
 array_decl : ID dim { $$ = newArrDecl($1, $2); }
@@ -341,11 +332,11 @@ dimension : dimension ML_BRACE logical_expression MR_BRACE { checkArraySubscript
 
 
 
-scalar_type : INT
-            | DOUBLE
-            | STRING
-            | BOOL
-            | FLOAT
+scalar_type : INT { $$ = cur_type = $1; }
+            | DOUBLE { $$ = cur_type = $1; }
+            | STRING { $$ = cur_type = $1; }
+            | BOOL { $$ = cur_type = $1; }
+            | FLOAT { $$ = cur_type = $1; }
             ;
 
 sign_literal_const : SUB_OP sign_literal_const { $$ = checkUMinus($2); }

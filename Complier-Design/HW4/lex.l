@@ -259,7 +259,7 @@ id *new_id();
 
 "int"	{
 	tokenString("kw", yytext);
-	yylval.kind = _int;
+	yylval.type = _int;
 	return INT;
 }
 
@@ -267,7 +267,7 @@ id *new_id();
 
 "bool"	{
 	tokenString("kw", yytext);
-	yylval.kind = _bool;
+	yylval.type = _bool;
 	return BOOL;
 }
 
@@ -275,19 +275,19 @@ id *new_id();
 
 "float"	{
 	tokenString("kw", yytext);
-	yylval.kind = _float;
+	yylval.type = _float;
 	return FLOAT;
 }
 
 "double"	{
 	tokenString("kw", yytext);
-	yylval.kind = _double;
+	yylval.type = _double;
 	return DOUBLE;
 }
 
 "string"	{
 	tokenString("kw", yytext);
-	yylval.kind = _string;
+	yylval.type = _string;
 	return STRING;
 }
 

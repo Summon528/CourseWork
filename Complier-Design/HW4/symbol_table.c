@@ -29,34 +29,30 @@ SymbolEntry_t* pushST(SymbolTable_t* st, char* name) {
     return se;
 }
 
-void pushSTVarArray(SymbolTable_t* st, DeclArray_t* da, Type_t type) {
-    for (int i = 0; i < da->size; i++) {
-        SymbolEntry_t* se = pushST(st, da->arr[i]->name);
-        if (se == NULL) {
-            panic(2, da->arr[i]->name, "redeclared");
-            continue;
-        }
-        se->kind = variable;
-        se->const_val = NULL;
-        se->arr_sig = newIntArrayCpy(da->arr[i]->arr_sig);
-        se->type = type;
-        se->params = NULL;
+void pushSTVar(SymbolTable_t* st, char* name, IntArray_t* arr) {
+    SymbolEntry_t* se = pushST(st, name);
+    if (se == NULL) {
+        panic(2, name, "redeclared");
+        return;
     }
+    se->kind = variable;
+    se->const_val = NULL;
+    se->arr_sig = arr;
+    se->type = cur_type;
+    se->params = NULL;
 }
 
-void pushSTConstArray(SymbolTable_t* st, DeclArray_t* da, Type_t type) {
-    for (int i = 0; i < da->size; i++) {
-        SymbolEntry_t* se = pushST(st, da->arr[i]->name);
-        if (se == NULL) {
-            panic(2, da->arr[i]->name, "redeclared");
-            continue;
-        }
-        se->kind = constant;
-        se->const_val = copyLiteral(da->arr[i]->val);
-        se->arr_sig = NULL;
-        se->type = type;
-        se->params = NULL;
+void pushSTConst(SymbolTable_t* st, char* name, Literal_t* lit) {
+    SymbolEntry_t* se = pushST(st, name);
+    if (se == NULL) {
+        panic(2, name, "redeclared");
+        return;
     }
+    se->kind = constant;
+    se->const_val = lit;
+    se->arr_sig = NULL;
+    se->type = cur_type;
+    se->params = NULL;
 }
 
 void pushSTParamArray(SymbolTable_t* st, DeclArray_t* da) {

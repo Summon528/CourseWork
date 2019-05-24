@@ -11,12 +11,11 @@ typedef struct symboltable {
 } SymbolTable_t;
 
 SymbolTable_t* newSymbolTable(int level);
-void pushSTVarArray(SymbolTable_t* st, DeclArray_t* da, Type_t type);
-void pushSTConstArray(SymbolTable_t* st, DeclArray_t* da, Type_t type);
 void pushSTParamArray(SymbolTable_t* st, DeclArray_t* da);
 void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, DeclArray_t* da,
                 int decl);
 SymbolEntry_t* findST(SymbolTable_t* st, char* name);
 void printST(SymbolTable_t* st);
 void freeST(SymbolTable_t* st);
-void redeclared(char* name);
+void pushSTConst(SymbolTable_t* st, char* name, Literal_t* lit);
+void pushSTVar(SymbolTable_t* st, char* name, IntArray_t* arr);
