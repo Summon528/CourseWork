@@ -13,3 +13,4 @@ void pushTS(TableStack_t* ts);
 void popTS(TableStack_t* ts);
 SymbolTable_t* getTopTS(TableStack_t* ts);
 void freeTS(TableStack_t* ts);
+SymbolEntry_t* findTS(TableStack_t* ts, char* name);

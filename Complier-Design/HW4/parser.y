@@ -1,5 +1,6 @@
 %{
 #include "everything.h"
+#include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -84,13 +85,17 @@ int yyerror( char *msg );
     DeclItem_t* decl_item;
     DeclArray_t* decl_array;
     Kind_t kind;
+    Type_t type;
 }
 
-%type<iarray> dim;
+%type<iarray> dim dimension;
 %type<decl_item> array_decl;
-%type<literal> literal_const sign_literal_const;
+%type<literal> literal_const;
 %type<decl_array> identifier_list const_list parameter_list;
 %type<kind> scalar_type;
+%type<type> element logical_expression variable_reference logical_term;
+%type<type> logical_factor relation_expression arithmetic_expression;
+%type<type> term factor sign_literal_const;
 %start program
 %%
 
@@ -185,8 +190,8 @@ const_decl :
         freeDeclArray($3);
     };
 
-const_list : const_list COMMA ID ASSIGN_OP sign_literal_const { $$ = pushDeclArray($1, newDeclItemConst($3, $5)); }
-           | ID ASSIGN_OP sign_literal_const { $$ = pushDeclArray(newDeclArray(), newDeclItemConst($1, $3)); }
+const_list : const_list COMMA ID ASSIGN_OP literal_const { $$ = pushDeclArray($1, newDeclItemConst($3, $5)); }
+           | ID ASSIGN_OP literal_const { $$ = pushDeclArray(newDeclArray(), newDeclItemConst($1, $3)); }
            ;
 
 array_decl : ID dim { $$ = newArrDecl($1, $2); }
@@ -272,43 +277,43 @@ jump_statement : CONTINUE SEMICOLON
                | RETURN logical_expression SEMICOLON
                ;
 
-variable_reference : array_list
-                   | ID
+variable_reference : ID dimension { $$ = getType(ts, $1, $2, false); }
+                   | ID { $$ = getType(ts, $1, NULL, false); }
                    ;
 
 
-logical_expression : logical_expression OR_OP logical_term
+logical_expression : logical_expression OR_OP logical_term { $$ = checkLogic($1, $3); }
                    | logical_term
                    ;
 
-logical_term : logical_term AND_OP logical_factor
+logical_term : logical_term AND_OP logical_factor { $$ = checkLogic($1, $3); }
              | logical_factor
              ;
 
-logical_factor : NOT_OP logical_factor
+logical_factor : NOT_OP logical_factor { $$ = checkULogic($2); }
                | relation_expression
                ;
 
-relation_expression : relation_expression relation_operator arithmetic_expression
+relation_expression : relation_expression relation_operator arithmetic_expression { $$ = checkRelation($1, $3); }
+                    | relation_expression NE_OP arithmetic_expression { $$ = checkEQNEQ($1, $3); }
+                    | relation_expression EQ_OP arithmetic_expression { $$ = checkEQNEQ($1, $3); }
                     | arithmetic_expression
                     ;
 
 relation_operator : LT_OP
                   | LE_OP
-                  | EQ_OP
                   | GE_OP
                   | GT_OP
-                  | NE_OP
                   ;
 
-arithmetic_expression : arithmetic_expression ADD_OP term
-                      | arithmetic_expression SUB_OP term
+arithmetic_expression : arithmetic_expression ADD_OP term { $$ = checkArith($1, $3); }
+                      | arithmetic_expression SUB_OP term { $$ = checkArith($1, $3); }
                       | term
                       ;
 
-term : term MUL_OP factor
-     | term DIV_OP factor
-     | term MOD_OP factor
+term : term MUL_OP factor { $$ = checkArith($1, $3); }
+     | term DIV_OP factor { $$ = checkArith($1, $3); }
+     | term MOD_OP factor { $$ = checkMod($1, $3); }
      | factor
      ;
 
@@ -316,11 +321,11 @@ factor : sign_literal_const
        | element
        ;
 
-element : SUB_OP element
+element : SUB_OP element { $$ = checkUMinus($2); }
         | variable_reference
-        | L_PAREN logical_expression R_PAREN
-        | ID L_PAREN logical_expression_list R_PAREN
-        | ID L_PAREN R_PAREN
+        | L_PAREN logical_expression R_PAREN { $$ = $2; }
+        | ID L_PAREN logical_expression_list R_PAREN { $$ = getType(ts, $1, NULL, true); }
+        | ID L_PAREN R_PAREN { $$ = getType(ts, $1, NULL, true); }
         ;
 
 
@@ -329,11 +334,9 @@ logical_expression_list : logical_expression_list COMMA logical_expression
                         | logical_expression
                         ;
 
-array_list : ID dimension
-           ;
 
-dimension : dimension ML_BRACE logical_expression MR_BRACE         
-          | ML_BRACE logical_expression MR_BRACE
+dimension : dimension ML_BRACE logical_expression MR_BRACE { checkArraySubscript($3), $$ = pushIntArray($1, 0); }
+          | ML_BRACE logical_expression MR_BRACE { checkArraySubscript($2), $$ = pushIntArray(newIntArray(), 0); }
           ;
 
 
@@ -345,8 +348,8 @@ scalar_type : INT
             | FLOAT
             ;
 
-sign_literal_const : SUB_OP sign_literal_const { $$ = negLiteral($2); }
-                   | literal_const { $$ = $1; }
+sign_literal_const : SUB_OP sign_literal_const { $$ = checkUMinus($2); }
+                   | literal_const { $$ = $1->type; }
                    ;
 
 literal_const : INT_CONST

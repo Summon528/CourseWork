@@ -23,6 +23,14 @@ SymbolTable_t* getTopTS(TableStack_t* ts) {
     return ts->top >= 0 ? ts->stack[ts->top] : NULL;
 }
 
+SymbolEntry_t* findTS(TableStack_t* ts, char* name) {
+    for (int i = ts->top; i >= 0; i--) {
+        SymbolEntry_t* target = findST(ts->stack[i], name);
+        if (target != NULL) return target;
+    }
+    return NULL;
+}
+
 void popTS(TableStack_t* ts) {
     freeST(getTopTS(ts));
     ts->top--;
