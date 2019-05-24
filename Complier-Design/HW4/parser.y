@@ -161,12 +161,12 @@ parameter_list : parameter_list COMMA scalar_type ID { $$ = pushDeclArray($1, ne
 var_decl : scalar_type identifier_list SEMICOLON
 
 identifier_list : identifier_list COMMA ID { pushSTVar(getTopTS(ts), $3, NULL); }
-                | identifier_list COMMA ID ASSIGN_OP logical_expression { checkAssign(cur_type, $5); pushSTVar(getTopTS(ts), $3, NULL); }
+                | identifier_list COMMA ID ASSIGN_OP logical_expression { checkAssign(variable, cur_type, $5); pushSTVar(getTopTS(ts), $3, NULL); }
                 | identifier_list COMMA ID dim ASSIGN_OP initial_array { pushSTVar(getTopTS(ts), $3, $4); }
                 | identifier_list COMMA ID dim { pushSTVar(getTopTS(ts), $3, $4); }
                 | ID dim ASSIGN_OP initial_array { pushSTVar(getTopTS(ts), $1, $2); }
                 | ID dim { pushSTVar(getTopTS(ts), $1, $2); }
-                | ID ASSIGN_OP logical_expression { checkAssign(cur_type, $3); pushSTVar(getTopTS(ts), $1, NULL); }
+                | ID ASSIGN_OP logical_expression { checkAssign(variable, cur_type, $3); pushSTVar(getTopTS(ts), $1, NULL); }
                 | ID { pushSTVar(getTopTS(ts), $1, NULL); }
                 ;
 
@@ -255,7 +255,8 @@ increment_expression : increment_expression COMMA var_assign
                      | var_assign
                      ;
 
-var_assign : variable_reference ASSIGN_OP logical_expression { checkAssign($1, $3); }
+var_assign : ID ASSIGN_OP logical_expression { checkAssign(findTS(ts, $1)->kind, getType(ts, $1, NULL, false), $3); }
+           | ID dimension ASSIGN_OP logical_expression { checkAssign(findTS(ts, $1)->kind, getType(ts, $1, $2, false), $4); }
            ;
 
 function_invoke_statement : ID L_PAREN logical_expression_list R_PAREN SEMICOLON

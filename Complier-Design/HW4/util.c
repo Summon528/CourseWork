@@ -7,6 +7,9 @@ static const char* TYPE_STR[] = {"int",   "float",    "double",
                                  "bool",  "string",   "void",
                                  "array", "function", "unknown"};
 
+static const char* KIND_STR[] = {"function", "parameter", "variable",
+                                 "constant"};
+
 void panic(int cnt, ...) {
     va_list valist;
     va_start(valist, cnt);
@@ -121,7 +124,11 @@ Type_t checkArraySubscript(Type_t a) {
     return _unknown;
 }
 
-void checkAssign(Type_t a, Type_t b) {
+void checkAssign(Kind_t k, Type_t a, Type_t b) {
+    if (k == constant || k == function) {
+        panic(2, KIND_STR[k], "is not assignable");
+        return;
+    }
     promoteType1(&b, a);
     if (a != b || !(a == _int || a == _float || a == _double || a == _bool ||
                     a == _string)) {

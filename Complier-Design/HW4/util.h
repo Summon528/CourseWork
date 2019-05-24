@@ -12,6 +12,6 @@ Type_t checkEQNEQ(Type_t a, Type_t b);
 Type_t checkArith(Type_t a, Type_t b);
 Type_t checkMod(Type_t a, Type_t b);
 Type_t checkArraySubscript(Type_t a);
-void checkAssign(Type_t a, Type_t b);
+void checkAssign(Kind_t k, Type_t a, Type_t b);
 void promoteType1(Type_t* a, Type_t target);
 void promoteType2(Type_t* a, Type_t* b);
