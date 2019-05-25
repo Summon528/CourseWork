@@ -175,13 +175,44 @@ TypeStruct_t* checkFunc(char* name, TypeArray_t* ta) {
         if (!eqType2(tmp, ta->arr[i])) {
             if (!eqType1(ta->arr[i], _unknown)) {
                 panic("s s s d s t s t s", "incompatible argument to function",
-                      name, "at position", i + 1, "(", tmp, "and", ta->arr[i],
-                      ")");
+                      name, "at position", i, "(", tmp, "and", ta->arr[i], ")");
             }
         }
         freeTypeStruct(tmp);
     }
     return newTypeStruct1(se->type);
+}
+
+void checkArrayInit(char* name, Type_t type, IntArray_t* dim,
+                    TypeArray_t* init) {
+    int dsize = 1, isize = init == NULL ? 0 : init->size;
+    for (int i = 0; i < dim->size; i++) {
+        if (dim->arr[i] <= 0) {
+            panic("s s", name, "declared as an array with a negative size");
+            return;
+        }
+        dsize *= dim->arr[i];
+    }
+
+    if (init == NULL) return;
+
+    TypeStruct_t* tmp = newTypeStruct1(cur_type);
+    for (int i = 0; i < isize; i++) {
+        promoteType1(init->arr[i], tmp);
+        if (!eqType2(tmp, init->arr[i])) {
+            if (!eqType1(init->arr[i], _unknown)) {
+                panic("s s s d s t s t s",
+                      "incompatible type while initializing", name,
+                      "at position", i, "(", tmp, "and", init->arr[i], ")");
+            }
+        }
+    }
+    freeTypeStruct(tmp);
+
+    if (isize > dsize) {
+        panic("s s s", "excess elements in array", name, "initializer");
+        return;
+    }
 }
 
 void promoteType1(TypeStruct_t* a, TypeStruct_t* target) {

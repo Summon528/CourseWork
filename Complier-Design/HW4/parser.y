@@ -96,7 +96,7 @@ int yyerror( char *msg );
 %type<type_struct> element logical_expression variable_reference logical_term;
 %type<type_struct> logical_factor relation_expression arithmetic_expression;
 %type<type_struct> term factor sign_literal_const function_invoke;
-%type<type_array> logical_expression_list;
+%type<type_array> logical_expression_list literal_list initial_array;
 %type<type> scalar_type;
 %start program
 %%
@@ -172,10 +172,24 @@ identifier_list : identifier_list COMMA ID { pushSTVar(getTopTS(ts), $3, NULL); 
                     freeTypeStruct(tmp);
                     freeTypeStruct($5);
                 }
-                | identifier_list COMMA ID dim ASSIGN_OP initial_array { pushSTVar(getTopTS(ts), $3, $4); }
-                | identifier_list COMMA ID dim { pushSTVar(getTopTS(ts), $3, $4); }
-                | ID dim ASSIGN_OP initial_array { pushSTVar(getTopTS(ts), $1, $2); }
-                | ID dim { pushSTVar(getTopTS(ts), $1, $2); }
+                | identifier_list COMMA ID dim ASSIGN_OP initial_array {
+                    checkArrayInit($3, cur_type, $4, $6);
+                    pushSTVar(getTopTS(ts), $3, $4);
+                    freeTypeArray($6);
+                }
+                | identifier_list COMMA ID dim {
+                    checkArrayInit($3, cur_type, $4, NULL);
+                    pushSTVar(getTopTS(ts), $3, $4);
+                }
+                | ID dim ASSIGN_OP initial_array {
+                    checkArrayInit($1, cur_type, $2, $4);
+                    pushSTVar(getTopTS(ts), $1, $2);
+                    freeTypeArray($4);
+                }
+                | ID dim {
+                    checkArrayInit($1, cur_type, $2, NULL);
+                    pushSTVar(getTopTS(ts), $1, $2);
+                }
                 | ID ASSIGN_OP logical_expression {
                     TypeStruct_t* tmp = newTypeStruct1(cur_type);
                     checkAssign(variable, tmp, $3);
@@ -185,13 +199,13 @@ identifier_list : identifier_list COMMA ID { pushSTVar(getTopTS(ts), $3, NULL); 
                 }
                 | ID { pushSTVar(getTopTS(ts), $1, NULL); }
                 ;
-
+                
 initial_array : L_BRACE literal_list R_BRACE
               ;
 
-literal_list : literal_list COMMA logical_expression
-             | logical_expression
-             | 
+literal_list : literal_list COMMA logical_expression { $$ = pushTypeArray($1, $3); }
+             | logical_expression { $$ = pushTypeArray(newTypeArray(), $1); }
+             |  { $$ = newTypeArray(); }
              ;
 
 const_decl : CONST scalar_type const_list SEMICOLON
@@ -343,7 +357,7 @@ element : SUB_OP element { $$ = checkUMinus($2), freeTypeStruct($2); }
         | function_invoke
         ;
 
-function_invoke : ID L_PAREN logical_expression_list R_PAREN { $$ = checkFunc($1, $3); }
+function_invoke : ID L_PAREN logical_expression_list R_PAREN { $$ = checkFunc($1, $3), freeTypeArray($3); }
                 | ID L_PAREN R_PAREN { $$ = checkFunc($1, NULL); }
                 ;
 

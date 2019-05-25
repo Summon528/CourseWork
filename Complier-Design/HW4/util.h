@@ -16,6 +16,8 @@ TypeStruct_t* checkArith(TypeStruct_t* a, TypeStruct_t* b);
 TypeStruct_t* checkMod(TypeStruct_t* a, TypeStruct_t* b);
 TypeStruct_t* checkArraySubscript(TypeStruct_t* a);
 TypeStruct_t* checkFunc(char* name, TypeArray_t* ta);
+void checkArrayInit(char* name, Type_t type, IntArray_t* dim,
+                    TypeArray_t* init);
 void checkAssign(Kind_t k, TypeStruct_t* a, TypeStruct_t* b);
 void promoteType1(TypeStruct_t* a, TypeStruct_t* target);
 void promoteType2(TypeStruct_t* a, TypeStruct_t* b);
