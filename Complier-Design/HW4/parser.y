@@ -10,6 +10,7 @@ extern char *yytext;
 extern char buf[256];
 extern TableStack_t* ts;
 extern Type_t cur_type;
+extern Type_t cur_fun_type;
 
 int yylex();
 int yyerror( char *msg );
@@ -120,10 +121,16 @@ decl_and_def_list : decl_and_def_list var_decl
 
 funct_def : scalar_type ID L_PAREN R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, $1, NULL, 0);
+                TypeStruct_t* tmp = getType(ts, $2, NULL, true);
+                cur_fun_type = tmp->type;
+                freeTypeStruct(tmp);
             }
             compound_statement 
           | scalar_type ID L_PAREN parameter_list R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, $1, $4, 0);
+                TypeStruct_t* tmp = getType(ts, $2, NULL, true);
+                cur_fun_type = tmp->type;
+                freeTypeStruct(tmp);
             } L_BRACE {
                 pushTS(ts); 
                 pushSTParamArray(getTopTS(ts), $4);
@@ -133,12 +140,18 @@ funct_def : scalar_type ID L_PAREN R_PAREN {
                 popTS(ts);
                 freeParamArray($4);
             }
-          | VOID ID L_PAREN R_PAREN {
+            | VOID ID L_PAREN R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, _void, NULL, 0);
+                TypeStruct_t* tmp = getType(ts, $2, NULL, true);
+                cur_fun_type = tmp->type;
+                freeTypeStruct(tmp);
             }
             compound_statement 
           | VOID ID L_PAREN parameter_list R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, _void, $4, 0);
+                TypeStruct_t* tmp = getType(ts, $2, NULL, true);
+                cur_fun_type = tmp->type;
+                freeTypeStruct(tmp);
             } L_BRACE {
                 pushTS(ts);
                 pushSTParamArray(getTopTS(ts), $4);
@@ -200,7 +213,7 @@ identifier_list : identifier_list COMMA ID { pushSTVar(getTopTS(ts), $3, NULL); 
                 | ID { pushSTVar(getTopTS(ts), $1, NULL); }
                 ;
                 
-initial_array : L_BRACE literal_list R_BRACE
+initial_array : L_BRACE literal_list R_BRACE { $$ = $2; }
               ;
 
 literal_list : literal_list COMMA logical_expression { $$ = pushTypeArray($1, $3); }
@@ -304,7 +317,7 @@ function_invoke_statement : function_invoke SEMICOLON
 
 jump_statement : CONTINUE SEMICOLON
                | BREAK SEMICOLON
-               | RETURN logical_expression SEMICOLON
+               | RETURN logical_expression SEMICOLON { checkReturn($2, cur_fun_type); freeTypeStruct($2); }
                ;
 
 variable_reference : ID dimension { $$ = getType(ts, $1, $2, false); }

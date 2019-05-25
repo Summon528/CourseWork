@@ -81,7 +81,7 @@ void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, ParamArray_t* da,
             panic("s s", "redefinition of", name);
             return;
         }
-        if (!eqParamArray(se->params, da)) {
+        if (type != se->type || !eqParamArray(se->params, da)) {
             panic("s s", "conflicting types for", name);
             return;
         }

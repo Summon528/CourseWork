@@ -215,6 +215,18 @@ void checkArrayInit(char* name, Type_t type, IntArray_t* dim,
     }
 }
 
+void checkReturn(TypeStruct_t* a, Type_t target) {
+    TypeStruct_t* tmp = newTypeStruct1(target);
+    promoteType1(a, tmp);
+    if (!eqType2(tmp, a)) {
+        if (!eqType1(a, _unknown)) {
+            panic("s t s t s", "incompatible return type (", tmp, "and", a,
+                  ")");
+        }
+    }
+    freeTypeStruct(tmp);
+}
+
 void promoteType1(TypeStruct_t* a, TypeStruct_t* target) {
     if (eqType2(a, target)) return;
     if (eqIntArray(a->arr_sig, target->arr_sig)) {
