@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "extern.h"
+#include "util.h"
 
 extern int yyparse();
 extern FILE *yyin;
@@ -23,11 +24,21 @@ int main(int argc, char **argv) {
     ts = newTableStack();
     linenum = 1;
     Opt_Symbol = 0;
+    in_loop = 0;
     pushTS(ts);
 
     yyparse(); /* primary procedure of parser */
 
-    printST(getTopTS(ts));
+    SymbolTable_t *last = getTopTS(ts);
+    printST(last);
+    for (int i = 0; i < last->size; i++) {
+        if (last->entries[i]->kind == function &&
+            !last->entries[i]->fun_defed) {
+            panic("s s s", "function", last->entries[i]->name,
+                  "declared but not defined");
+        }
+    }
+
     popTS(ts);
     freeTS(ts);
 

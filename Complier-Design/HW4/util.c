@@ -227,6 +227,26 @@ void checkReturn(TypeStruct_t* a, Type_t target) {
     freeTypeStruct(tmp);
 }
 
+void checkIO(TypeStruct_t* a) {
+    if (eqType1(a, _unknown) || eqType1(a, _bool) || eqType1(a, _double) ||
+        eqType1(a, _float) || eqType1(a, _bool) || eqType1(a, _int) ||
+        eqType1(a, _string)) {
+        return;
+    }
+    panic("s t s", "invalid argument type", a, "to read/print statement");
+}
+
+void checkCondition(TypeStruct_t* a) {
+    if (eqType1(a, _bool) || eqType1(a, _unknown)) return;
+    panic("s t s", "conditional expression should be bool type,", a, "given");
+}
+
+void checkInLoop(int in_loop) {
+    if (in_loop <= 0) {
+        panic("s", "break/continue statement not in loop statement");
+    }
+}
+
 void promoteType1(TypeStruct_t* a, TypeStruct_t* target) {
     if (eqType2(a, target)) return;
     if (eqIntArray(a->arr_sig, target->arr_sig)) {

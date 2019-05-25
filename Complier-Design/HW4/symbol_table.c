@@ -81,11 +81,11 @@ void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, ParamArray_t* da,
             panic("s s", "redefinition of", name);
             return;
         }
+        se->fun_defed = true;
         if (type != se->type || !eqParamArray(se->params, da)) {
             panic("s s", "conflicting types for", name);
             return;
         }
-        se->fun_defed = true;
         return;
     }
     se = pushST(st, name);
@@ -94,6 +94,7 @@ void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, ParamArray_t* da,
     se->arr_sig = NULL;
     se->type = type;
     se->params = copyParamArray(da);
+    if (!decl) se->fun_defed = true;
 }
 
 SymbolEntry_t* findST(SymbolTable_t* st, char* name) {

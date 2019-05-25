@@ -11,6 +11,7 @@ extern char buf[256];
 extern TableStack_t* ts;
 extern Type_t cur_type;
 extern Type_t cur_fun_type;
+extern int in_loop;
 
 int yylex();
 int yyerror( char *msg );
@@ -96,7 +97,7 @@ int yyerror( char *msg );
 %type<param_array> parameter_list;
 %type<type_struct> element logical_expression variable_reference logical_term;
 %type<type_struct> logical_factor relation_expression arithmetic_expression;
-%type<type_struct> term factor sign_literal_const function_invoke;
+%type<type_struct> term factor sign_literal_const function_invoke control_expression;
 %type<type_array> logical_expression_list literal_list initial_array;
 %type<type> scalar_type;
 %start program
@@ -250,23 +251,38 @@ statement : compound_statement
           ;     
 
 simple_statement : var_assign SEMICOLON
-                 | PRINT logical_expression SEMICOLON
-                 | READ variable_reference SEMICOLON
+                 | PRINT logical_expression SEMICOLON { checkIO($2); freeTypeStruct($2); }
+                 | READ variable_reference SEMICOLON { checkIO($2); freeTypeStruct($2); }
                  ;
 
-conditional_statement : IF L_PAREN logical_expression R_PAREN compound_statement
-                      | IF L_PAREN logical_expression R_PAREN 
-                            compound_statement
-                        ELSE
-                            compound_statement
+conditional_statement : _conditional_statement compound_statement
+                      | _conditional_statement compound_statement ELSE compound_statement
                       ;
-while_statement : WHILE L_PAREN logical_expression R_PAREN
-                    compound_statement
-                | DO compound_statement WHILE L_PAREN logical_expression R_PAREN SEMICOLON
+
+_conditional_statement : IF L_PAREN logical_expression R_PAREN  {
+                            checkCondition($3);
+                            freeTypeStruct($3);
+                        };
+
+while_statement : WHILE L_PAREN logical_expression R_PAREN {
+                        checkCondition($3);
+                        freeTypeStruct($3);
+                        in_loop++; 
+                    } compound_statement { in_loop--; }
+                | DO { in_loop++; } compound_statement { in_loop--; } WHILE L_PAREN logical_expression R_PAREN SEMICOLON {
+                    checkCondition($7);
+                    freeTypeStruct($7);
+                }
                 ;
 
-for_statement : FOR L_PAREN initial_expression_list SEMICOLON control_expression_list SEMICOLON increment_expression_list R_PAREN 
-                    compound_statement
+for_statement : FOR L_PAREN initial_expression_list SEMICOLON control_expression SEMICOLON increment_expression_list R_PAREN {
+                    checkCondition($5);
+                    freeTypeStruct($5); 
+                    in_loop++;
+                }
+                    compound_statement {
+                        in_loop--;
+                    }
               ;
 
 initial_expression_list : initial_expression
@@ -278,14 +294,9 @@ initial_expression : initial_expression COMMA var_assign
                    | logical_expression
                    | var_assign
 
-control_expression_list : control_expression
-                        |
-                        ;
 
-control_expression : control_expression COMMA var_assign
-                   | control_expression COMMA logical_expression
-                   | logical_expression
-                   | var_assign
+control_expression : logical_expression
+                   | { $$ = newTypeStruct1(_bool); }
                    ;
 
 increment_expression_list : increment_expression 
@@ -300,13 +311,13 @@ increment_expression : increment_expression COMMA var_assign
 
 var_assign : ID ASSIGN_OP logical_expression { 
                 TypeStruct_t* tmp = getType(ts, $1, NULL, false);
-                checkAssign(findTS(ts, $1)->kind, tmp, $3); 
+                if(!eqType1(tmp, _unknown)) checkAssign(findTS(ts, $1)->kind, tmp, $3); 
                 freeTypeStruct(tmp);
                 freeTypeStruct($3);
            }
            | ID dimension ASSIGN_OP logical_expression {
                 TypeStruct_t* tmp = getType(ts, $1, $2, false);
-                checkAssign(findTS(ts, $1)->kind, tmp, $4); 
+                if(!eqType1(tmp, _unknown)) checkAssign(findTS(ts, $1)->kind, tmp, $4); 
                 freeTypeStruct(tmp);
                 freeTypeStruct($4);
             }
@@ -315,8 +326,8 @@ var_assign : ID ASSIGN_OP logical_expression {
 function_invoke_statement : function_invoke SEMICOLON
                           ;
 
-jump_statement : CONTINUE SEMICOLON
-               | BREAK SEMICOLON
+jump_statement : CONTINUE SEMICOLON { checkInLoop(in_loop); }
+               | BREAK SEMICOLON { checkInLoop(in_loop); }
                | RETURN logical_expression SEMICOLON { checkReturn($2, cur_fun_type); freeTypeStruct($2); }
                ;
 

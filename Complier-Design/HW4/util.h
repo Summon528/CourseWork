@@ -20,5 +20,8 @@ void checkArrayInit(char* name, Type_t type, IntArray_t* dim,
                     TypeArray_t* init);
 void checkAssign(Kind_t k, TypeStruct_t* a, TypeStruct_t* b);
 void checkReturn(TypeStruct_t* a, Type_t target);
+void checkIO(TypeStruct_t* a);
+void checkCondition(TypeStruct_t* a);
+void checkInLoop(int in_loop);
 void promoteType1(TypeStruct_t* a, TypeStruct_t* target);
 void promoteType2(TypeStruct_t* a, TypeStruct_t* b);
