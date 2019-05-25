@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
     linenum = 1;
     Opt_Symbol = 0;
     in_loop = 0;
+    r_state = false;
     pushTS(ts);
 
     yyparse(); /* primary procedure of parser */

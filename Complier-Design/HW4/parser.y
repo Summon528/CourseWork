@@ -12,6 +12,7 @@ extern TableStack_t* ts;
 extern Type_t cur_type;
 extern Type_t cur_fun_type;
 extern int in_loop;
+extern bool r_state;
 
 int yylex();
 int yyerror( char *msg );
@@ -126,7 +127,7 @@ funct_def : scalar_type ID L_PAREN R_PAREN {
                 cur_fun_type = tmp->type;
                 freeTypeStruct(tmp);
             }
-            compound_statement 
+            compound_statement { if(!r_state) panic("s", "last statement in function is not a return statement"); }
           | scalar_type ID L_PAREN parameter_list R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, $1, $4, 0);
                 TypeStruct_t* tmp = getType(ts, $2, NULL, true);
@@ -140,7 +141,8 @@ funct_def : scalar_type ID L_PAREN R_PAREN {
                 printST(getTopTS(ts));
                 popTS(ts);
                 freeParamArray($4);
-            }
+                if(!r_state) panic("s", "last statement in function is not a return statement");
+            } 
             | VOID ID L_PAREN R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, _void, NULL, 0);
                 TypeStruct_t* tmp = getType(ts, $2, NULL, true);
@@ -224,8 +226,22 @@ literal_list : literal_list COMMA logical_expression { $$ = pushTypeArray($1, $3
 
 const_decl : CONST scalar_type const_list SEMICOLON
 
-const_list : const_list COMMA ID ASSIGN_OP literal_const { pushSTConst(getTopTS(ts), $3, $5); }
-           | ID ASSIGN_OP literal_const { pushSTConst(getTopTS(ts), $1, $3); }
+const_list : const_list COMMA ID ASSIGN_OP literal_const {
+                TypeStruct_t* tmp1 = newTypeStruct1(cur_type);
+                TypeStruct_t* tmp2 = newTypeStruct1($5->type);
+                checkAssign(variable, tmp1, tmp2);
+                pushSTConst(getTopTS(ts), $3, $5);
+                freeTypeStruct(tmp1);
+                freeTypeStruct(tmp2);
+            }
+           | ID ASSIGN_OP literal_const { 
+                TypeStruct_t* tmp1 = newTypeStruct1(cur_type);
+                TypeStruct_t* tmp2 = newTypeStruct1($3->type);
+                checkAssign(variable, tmp1, tmp2);
+                pushSTConst(getTopTS(ts), $1, $3); 
+                freeTypeStruct(tmp1);
+                freeTypeStruct(tmp2);
+            }
            ;
 
 dim : dim ML_BRACE INT_CONST MR_BRACE { $$ = pushIntArray($1, $3->ival); }
@@ -235,19 +251,20 @@ dim : dim ML_BRACE INT_CONST MR_BRACE { $$ = pushIntArray($1, $3->ival); }
 compound_statement : L_BRACE { pushTS(ts); } var_const_stmt_list R_BRACE { printST(getTopTS(ts)); popTS(ts);}
                    ;
 
-var_const_stmt_list : var_const_stmt_list statement 
-                    | var_const_stmt_list var_decl
-                    | var_const_stmt_list const_decl
-                    |
+var_const_stmt_list : var_const_stmt_list statement
+                    | var_const_stmt_list var_decl { r_state = false; }
+                    | var_const_stmt_list const_decl { r_state = false; }
+                    | { r_state = false; }
                     ;
 
-statement : compound_statement
-          | simple_statement
-          | conditional_statement
-          | while_statement
-          | for_statement
-          | function_invoke_statement
-          | jump_statement
+statement : compound_statement { r_state = false; }
+          | simple_statement { r_state = false; }
+          | conditional_statement { r_state = false; }
+          | while_statement { r_state = false; }
+          | for_statement { r_state = false; }
+          | function_invoke_statement { r_state = false; }
+          | jump_statement { r_state = false; }
+          | return_statement { r_state = true; }
           ;     
 
 simple_statement : var_assign SEMICOLON
@@ -328,8 +345,10 @@ function_invoke_statement : function_invoke SEMICOLON
 
 jump_statement : CONTINUE SEMICOLON { checkInLoop(in_loop); }
                | BREAK SEMICOLON { checkInLoop(in_loop); }
-               | RETURN logical_expression SEMICOLON { checkReturn($2, cur_fun_type); freeTypeStruct($2); }
                ;
+
+return_statement : RETURN logical_expression SEMICOLON { checkReturn($2, cur_fun_type); freeTypeStruct($2); }
+                ; 
 
 variable_reference : ID dimension { $$ = getType(ts, $1, $2, false); }
                    | ID { $$ = getType(ts, $1, NULL, false); }
