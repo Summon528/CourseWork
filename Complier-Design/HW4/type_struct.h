@@ -4,7 +4,7 @@
 
 typedef struct typestruct {
     Type_t type;
-    IntArray_t* arr;
+    IntArray_t* arr_sig;
 } TypeStruct_t;
 
 TypeStruct_t* newTypeStruct1(Type_t type);

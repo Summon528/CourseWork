@@ -18,21 +18,15 @@ void panic(char* fmt, ...) {
     for (char* c = fmt; *c != '\0'; c++) {
         if (*c == ' ') putchar(' ');
         if (*c == 's') printf("%s", va_arg(valist, char*));
+        if (*c == 'd') printf("%d", va_arg(valist, int));
         if (*c == 't') {
             TypeStruct_t* tys = va_arg(valist, TypeStruct_t*);
-            char type_str[256] = {};
-            int rbuf = 256 - 1;
-            strncpy(type_str, TYPE_STR[tys->type], rbuf);
-            rbuf -= strlen(TYPE_STR[tys->type]);
-            if (tys->arr != NULL) {
-                for (int i = 0; i < tys->arr->size; i++) {
-                    char tmp[64];
-                    snprintf(tmp, sizeof(tmp), "[%d]", tys->arr->arr[i]);
-                    strncat(type_str, tmp, rbuf);
-                    rbuf -= strlen(tmp);
+            printf("%s", TYPE_STR[tys->type]);
+            if (tys->arr_sig != NULL) {
+                for (int i = 0; i < tys->arr_sig->size; i++) {
+                    printf("[%d]", tys->arr_sig->arr[i]);
                 }
             }
-            printf("%s", type_str);
         }
     }
     puts("##########");
@@ -156,19 +150,55 @@ void checkAssign(Kind_t k, TypeStruct_t* a, TypeStruct_t* b) {
     return;
 }
 
+TypeStruct_t* checkFunc(char* name, TypeArray_t* ta) {
+    SymbolEntry_t* se = findTS(ts, name);
+    if (se == NULL) {
+        panic("s s", "attempted to invoke undefined function", name);
+        return newTypeStruct1(_unknown);
+    }
+    if (se->kind != function) {
+        panic("s s", name, "is not a function");
+        return newTypeStruct1(_unknown);
+    }
+    if (se->params == NULL && ta == NULL) {
+        return newTypeStruct1(se->type);
+    }
+    if ((se->params == NULL && ta != NULL) ||
+        (se->params != NULL && ta == NULL) || (se->params->size != ta->size)) {
+        panic("s s", "incompatible argument count to function", name);
+        return newTypeStruct1(se->type);
+    }
+    for (int i = 0; i < ta->size; i++) {
+        TypeStruct_t* tmp = newTypeStruct2(se->params->arr[i]->type,
+                                           se->params->arr[i]->arr_sig, 0);
+        promoteType1(ta->arr[i], tmp);
+        if (!eqType2(tmp, ta->arr[i])) {
+            if (!eqType1(ta->arr[i], _unknown)) {
+                panic("s s s d s t s t s", "incompatible argument to function",
+                      name, "at position", i + 1, "(", tmp, "and", ta->arr[i],
+                      ")");
+            }
+        }
+        freeTypeStruct(tmp);
+    }
+    return newTypeStruct1(se->type);
+}
+
 void promoteType1(TypeStruct_t* a, TypeStruct_t* target) {
     if (eqType2(a, target)) return;
-    if (eqType1(target, _unknown) || eqType1(a, _unknown)) {
-        a->type = _unknown;
-        return;
-    }
-    if (eqType1(target, _double) && (eqType1(a, _int) || eqType1(a, _float))) {
-        a->type = _double;
-        return;
-    }
-    if (eqType1(target, _float) && eqType1(a, _int)) {
-        a->type = _float;
-        return;
+    if (eqIntArray(a->arr_sig, target->arr_sig)) {
+        if (target->type == _unknown || a->type == _unknown) {
+            a->type = _unknown;
+            return;
+        }
+        if (target->type == _double && (a->type == _int || a->type == _float)) {
+            a->type = _double;
+            return;
+        }
+        if (target->type == _float && a->type == _int) {
+            a->type = _float;
+            return;
+        }
     }
 }
 

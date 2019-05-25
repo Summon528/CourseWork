@@ -5,4 +5,5 @@
 #include "symbol_entry.h"
 #include "symbol_table.h"
 #include "table_stack.h"
+#include "type_array.h"
 #include "type_struct.h"

@@ -87,6 +87,7 @@ int yyerror( char *msg );
     ParamArray_t* param_array;
     Type_t type;
     TypeStruct_t* type_struct;
+    TypeArray_t* type_array;
 }
 
 %type<iarray> dim dimension;
@@ -94,7 +95,8 @@ int yyerror( char *msg );
 %type<param_array> parameter_list;
 %type<type_struct> element logical_expression variable_reference logical_term;
 %type<type_struct> logical_factor relation_expression arithmetic_expression;
-%type<type_struct> term factor sign_literal_const;
+%type<type_struct> term factor sign_literal_const function_invoke;
+%type<type_array> logical_expression_list;
 %type<type> scalar_type;
 %start program
 %%
@@ -283,8 +285,7 @@ var_assign : ID ASSIGN_OP logical_expression {
             }
            ;
 
-function_invoke_statement : ID L_PAREN logical_expression_list R_PAREN SEMICOLON
-                          | ID L_PAREN R_PAREN SEMICOLON
+function_invoke_statement : function_invoke SEMICOLON
                           ;
 
 jump_statement : CONTINUE SEMICOLON
@@ -339,16 +340,16 @@ factor : sign_literal_const
 element : SUB_OP element { $$ = checkUMinus($2), freeTypeStruct($2); }
         | variable_reference
         | L_PAREN logical_expression R_PAREN { $$ = $2; }
-        | ID L_PAREN logical_expression_list R_PAREN { $$ = getType(ts, $1, NULL, true); }
-        | ID L_PAREN R_PAREN { $$ = getType(ts, $1, NULL, true); }
+        | function_invoke
         ;
 
+function_invoke : ID L_PAREN logical_expression_list R_PAREN { $$ = checkFunc($1, $3); }
+                | ID L_PAREN R_PAREN { $$ = checkFunc($1, NULL); }
+                ;
 
-
-logical_expression_list : logical_expression_list COMMA logical_expression
-                        | logical_expression
+logical_expression_list : logical_expression_list COMMA logical_expression { $$ = pushTypeArray($1, $3); }
+                        | logical_expression { $$ = pushTypeArray(newTypeArray(), $1); }
                         ;
-
 
 dimension : dimension ML_BRACE logical_expression MR_BRACE { checkArraySubscript($3), freeTypeStruct($3), $$ = pushIntArray($1, 0); }
           | ML_BRACE logical_expression MR_BRACE { checkArraySubscript($2), freeTypeStruct($2), $$ = pushIntArray(newIntArray(), 0); }
