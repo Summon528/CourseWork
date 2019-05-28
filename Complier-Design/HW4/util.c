@@ -12,6 +12,7 @@ static const char* KIND_STR[] = {"function", "parameter", "variable",
                                  "constant"};
 
 void panic(char* fmt, ...) {
+    has_semantic_error = true;
     va_list valist;
     va_start(valist, fmt);
     printf("##########Error at Line #%d: ", linenum);

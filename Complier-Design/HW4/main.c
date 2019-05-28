@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
     Opt_Symbol = 0;
     in_loop = 0;
     r_state = false;
+    has_semantic_error = false;
     pushTS(ts);
 
     yyparse(); /* primary procedure of parser */
@@ -42,9 +43,15 @@ int main(int argc, char **argv) {
 
     popTS(ts);
     freeTS(ts);
-
-    fprintf(stdout, "\n|--------------------------------|\n");
-    fprintf(stdout, "|  There is no syntactic error!  |\n");
-    fprintf(stdout, "|--------------------------------|\n");
+    if (has_semantic_error) {
+        fprintf(stdout, "\n|--------------------------------|\n");
+        fprintf(stdout, "|  There is no syntactic error!  |\n");
+        fprintf(stdout, "|--------------------------------|\n");
+    } else {
+        puts(
+            "\n|-------------------------------------------|\n"
+            "| There is no syntactic and semantic error! |\n"
+            "|-------------------------------------------|");
+    }
     exit(0);
 }
