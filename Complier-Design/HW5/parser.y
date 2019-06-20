@@ -365,38 +365,35 @@ variable_reference : ID dimension { $$ = getType(ts, $1, $2, false); }
                    ;
 
 
-logical_expression : logical_expression OR_OP logical_term { $$ = checkLogic($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
+logical_expression : logical_expression OR_OP logical_term { $$ = checkLogic($1, $3), gen("ior"), freeTypeStruct($1), freeTypeStruct($3); }
                    | logical_term
                    ;
 
-logical_term : logical_term AND_OP logical_factor { $$ = checkLogic($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
+logical_term : logical_term AND_OP logical_factor { $$ = checkLogic($1, $3), gen("iand"), freeTypeStruct($1), freeTypeStruct($3); }
              | logical_factor
              ;
 
-logical_factor : NOT_OP logical_factor { $$ = checkULogic($2), freeTypeStruct($2); }
+logical_factor : NOT_OP logical_factor { $$ = checkULogic($2), gen("iconst_1\nixor"), freeTypeStruct($2); }
                | relation_expression
                ;
 
-relation_expression : relation_expression relation_operator arithmetic_expression { $$ = checkRelation($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
-                    | relation_expression NE_OP arithmetic_expression { $$ = checkEQNEQ($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
-                    | relation_expression EQ_OP arithmetic_expression { $$ = checkEQNEQ($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
+relation_expression : relation_expression LT_OP arithmetic_expression { $$ = checkRelation($1, $3), genRelation($1->type, "iflt"), freeTypeStruct($1), freeTypeStruct($3); }
+                    | relation_expression LE_OP arithmetic_expression { $$ = checkRelation($1, $3), genRelation($1->type, "ifle"), freeTypeStruct($1), freeTypeStruct($3); }
+                    | relation_expression GE_OP arithmetic_expression { $$ = checkRelation($1, $3), genRelation($1->type, "ifge"), freeTypeStruct($1), freeTypeStruct($3); }
+                    | relation_expression GT_OP arithmetic_expression { $$ = checkRelation($1, $3), genRelation($1->type, "ifgt"), freeTypeStruct($1), freeTypeStruct($3); }
+                    | relation_expression NE_OP arithmetic_expression { $$ = checkEQNEQ($1, $3), genRelation($1->type, "ifne"),freeTypeStruct($1), freeTypeStruct($3); }
+                    | relation_expression EQ_OP arithmetic_expression { $$ = checkEQNEQ($1, $3), genRelation($1->type, "ifeq"), freeTypeStruct($1), freeTypeStruct($3); }
                     | arithmetic_expression
                     ;
 
-relation_operator : LT_OP
-                  | LE_OP
-                  | GE_OP
-                  | GT_OP
-                  ;
-
-arithmetic_expression : arithmetic_expression ADD_OP term { $$ = checkArith($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
-                      | arithmetic_expression SUB_OP term { $$ = checkArith($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
+arithmetic_expression : arithmetic_expression ADD_OP term { $$ = checkArith($1, $3), genArith($3->type, "add"), freeTypeStruct($1), freeTypeStruct($3); }
+                      | arithmetic_expression SUB_OP term { $$ = checkArith($1, $3), genArith($3->type, "sub"), freeTypeStruct($1), freeTypeStruct($3); }
                       | term
                       ;
 
-term : term MUL_OP factor { $$ = checkArith($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
-     | term DIV_OP factor { $$ = checkArith($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
-     | term MOD_OP factor { $$ = checkMod($1, $3), freeTypeStruct($1), freeTypeStruct($3); }
+term : term MUL_OP factor { $$ = checkArith($1, $3), genArith($3->type, "mul"), freeTypeStruct($1), freeTypeStruct($3); }
+     | term DIV_OP factor { $$ = checkArith($1, $3), genArith($3->type, "div"), freeTypeStruct($1), freeTypeStruct($3); }
+     | term MOD_OP factor { $$ = checkMod($1, $3), genArith($3->type, "rem"), freeTypeStruct($1), freeTypeStruct($3); }
      | factor
      ;
 
@@ -404,7 +401,7 @@ factor : sign_literal_const
        | element
        ;
 
-element : SUB_OP element { $$ = checkUMinus($2), freeTypeStruct($2); }
+element : SUB_OP element { $$ = checkUMinus($2), genArith($2->type, "neg"), freeTypeStruct($2); }
         | variable_reference
         | L_PAREN logical_expression R_PAREN { $$ = $2; }
         | function_invoke
@@ -431,7 +428,7 @@ scalar_type : INT { $$ = cur_type = $1; }
             | FLOAT { $$ = cur_type = $1; }
             ;
 
-sign_literal_const : SUB_OP sign_literal_const { $$ = checkUMinus($2), freeTypeStruct($2); }
+sign_literal_const : SUB_OP sign_literal_const { $$ = checkUMinus($2), genArith($2->type, "neg"), freeTypeStruct($2); }
                    | literal_const { genLiteral($1, $1->type); $$ = newTypeStruct1($1->type); }
                    ;
 

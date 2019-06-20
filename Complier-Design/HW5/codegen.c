@@ -1,5 +1,6 @@
 #include "codegen.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "extern.h"
 #include "symbol_entry.h"
@@ -96,18 +97,68 @@ void genReturn(Type_t type) {
     }
 }
 
-void genPromote(Type_t a, Type_t target) {
-    if (a == target) return;
+char *genPromote0(Type_t a, Type_t target) {
+    char *s = (char *)malloc(sizeof(char) * 4);
+    memset(s, 0, sizeof(char) * 4);
+    if (a == target) return s;
     if (target == _double && a == _int) {
-        fprintf(codeout, "i2d\n");
-        return;
+        s = strdup("i2d");
     }
     if (target == _double && a == _float) {
-        fprintf(codeout, "f2d\n");
-        return;
+        s = strdup("f2d");
     }
     if (target == _float && a == _int) {
-        fprintf(codeout, "i2f\n");
-        return;
+        s = strdup("i2f");
     }
+    return s;
+}
+
+void genPromote1(Type_t a, Type_t target) {
+    char *s = genPromote0(a, target);
+    fprintf(codeout, "%s\n", s);
+    free(s);
+}
+
+void genPromote2(Type_t a, Type_t b) {
+    genPromote1(b, a);
+    char *s = genPromote0(a, b);
+    if (s[0] != '\0') {
+        fprintf(codeout, "%cstore %d\n", TYPE_LOWER_CHAR[b],
+                getTopTS(ts)->next_var);
+        fprintf(codeout, "%s\n", s);
+        fprintf(codeout, "%cload %d\n", TYPE_LOWER_CHAR[b],
+                getTopTS(ts)->next_var);
+    }
+    free(s);
+}
+
+void genArith(Type_t t, char *instr) {
+    fprintf(codeout, "%c%s\n", TYPE_LOWER_CHAR[t], instr);
+}
+
+void gen(char *instr) { fprintf(codeout, "%s\n", instr); }
+
+void genRelation(Type_t t, char *instr) {
+    if (t == _int) {
+        fprintf(codeout, "isub\n");
+    } else {
+        fprintf(codeout, "%ccmpl\n", TYPE_LOWER_CHAR[t]);
+    }
+    char *label1 = genLabel(), *label2 = genLabel();
+    fprintf(codeout,
+            "%s %s\n"
+            "iconst_0\n"
+            "goto %s\n"
+            "%s:\n"
+            "iconst_1\n"
+            "%s:\n",
+            instr, label1, label2, label1, label2);
+    free(label1);
+    free(label2);
+}
+
+char *genLabel() {
+    char *s = malloc(sizeof(char) * 10);
+    sprintf(s, "G%d", label_cnt++);
+    return s;
 }

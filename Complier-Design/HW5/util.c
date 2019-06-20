@@ -256,7 +256,7 @@ void promoteType1(TypeStruct_t* a, TypeStruct_t* target, bool gen_code) {
             a->type = _unknown;
             return;
         }
-        if (gen_code) genPromote(a->type, target->type);
+        if (gen_code) genPromote1(a->type, target->type);
         if (target->type == _double && (a->type == _int || a->type == _float)) {
             a->type = _double;
             return;
@@ -269,6 +269,7 @@ void promoteType1(TypeStruct_t* a, TypeStruct_t* target, bool gen_code) {
 }
 
 void promoteType2(TypeStruct_t* a, TypeStruct_t* b) {
-    promoteType1(a, b, true);
-    promoteType1(b, a, true);
+    genPromote2(a->type, b->type);
+    promoteType1(b, a, false);
+    promoteType1(a, b, false);
 }

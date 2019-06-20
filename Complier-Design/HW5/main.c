@@ -30,6 +30,7 @@ int main(int argc, char **argv) {
     Opt_Symbol = 0;
     in_loop = 0;
     r_state = false;
+    label_cnt = 0;
     has_semantic_error = false;
     pushTS(ts);
 
