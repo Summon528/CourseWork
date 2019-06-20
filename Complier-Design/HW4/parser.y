@@ -123,14 +123,14 @@ decl_and_def_list : decl_and_def_list var_decl
 
 funct_def : scalar_type ID L_PAREN R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, $1, NULL, 0);
-                TypeStruct_t* tmp = getType(ts, $2, NULL, true);
+                TypeStruct_t* tmp = newTypeStruct1($1);
                 cur_fun_type = tmp->type;
                 freeTypeStruct(tmp);
             }
             compound_statement { if(!r_state) panic("s", "last statement in function is not a return statement"); }
           | scalar_type ID L_PAREN parameter_list R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, $1, $4, 0);
-                TypeStruct_t* tmp = getType(ts, $2, NULL, true);
+                TypeStruct_t* tmp = newTypeStruct1($1);
                 cur_fun_type = tmp->type;
                 freeTypeStruct(tmp);
             } L_BRACE {
@@ -145,14 +145,14 @@ funct_def : scalar_type ID L_PAREN R_PAREN {
             } 
             | VOID ID L_PAREN R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, _void, NULL, 0);
-                TypeStruct_t* tmp = getType(ts, $2, NULL, true);
+                TypeStruct_t* tmp = newTypeStruct1(_void);
                 cur_fun_type = tmp->type;
                 freeTypeStruct(tmp);
             }
             compound_statement 
           | VOID ID L_PAREN parameter_list R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, _void, $4, 0);
-                TypeStruct_t* tmp = getType(ts, $2, NULL, true);
+                TypeStruct_t* tmp = newTypeStruct1(_void);
                 cur_fun_type = tmp->type;
                 freeTypeStruct(tmp);
             } L_BRACE {
