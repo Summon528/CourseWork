@@ -21,6 +21,10 @@ int main(int argc, char **argv) {
         exit(0);
     }
 
+    codeout = fopen("code.j", "w");
+    fprintf(codeout, ".class public test\n.super java/lang/Object\n\n");
+    fprintf(codeout, "; Line#1\n");
+
     ts = newTableStack();
     linenum = 1;
     Opt_Symbol = 0;

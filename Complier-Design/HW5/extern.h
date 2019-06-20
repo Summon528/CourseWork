@@ -7,3 +7,4 @@ Type_t cur_type, cur_fun_type;
 int in_loop;
 bool r_state;
 bool has_semantic_error;
+FILE* codeout;

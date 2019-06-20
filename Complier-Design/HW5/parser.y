@@ -126,13 +126,15 @@ funct_def : scalar_type ID L_PAREN R_PAREN {
                 TypeStruct_t* tmp = newTypeStruct1($1);
                 cur_fun_type = tmp->type;
                 freeTypeStruct(tmp);
+                genFun($2);
             }
-            compound_statement { if(!r_state) panic("s", "last statement in function is not a return statement"); }
+            compound_statement { if(!r_state) panic("s", "last statement in function is not a return statement"); genFunEnd();}
           | scalar_type ID L_PAREN parameter_list R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, $1, $4, 0);
                 TypeStruct_t* tmp = newTypeStruct1($1);
                 cur_fun_type = tmp->type;
                 freeTypeStruct(tmp);
+                genFun($2);
             } L_BRACE {
                 pushTS(ts); 
                 pushSTParamArray(getTopTS(ts), $4);
@@ -142,19 +144,22 @@ funct_def : scalar_type ID L_PAREN R_PAREN {
                 popTS(ts);
                 freeParamArray($4);
                 if(!r_state) panic("s", "last statement in function is not a return statement");
+                genFunEnd();
             } 
             | VOID ID L_PAREN R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, _void, NULL, 0);
                 TypeStruct_t* tmp = newTypeStruct1(_void);
                 cur_fun_type = tmp->type;
                 freeTypeStruct(tmp);
+                genFun($2);
             }
-            compound_statement 
+            compound_statement  { genFunEnd(); }
           | VOID ID L_PAREN parameter_list R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, _void, $4, 0);
                 TypeStruct_t* tmp = newTypeStruct1(_void);
                 cur_fun_type = tmp->type;
                 freeTypeStruct(tmp);
+                genFun($2);
             } L_BRACE {
                 pushTS(ts);
                 pushSTParamArray(getTopTS(ts), $4);
@@ -163,6 +168,7 @@ funct_def : scalar_type ID L_PAREN R_PAREN {
                 printST(getTopTS(ts));
                 popTS(ts);
                 freeParamArray($4);
+                genFunEnd();
             }
           ;
 
