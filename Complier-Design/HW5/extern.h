@@ -8,3 +8,4 @@ int in_loop;
 bool r_state;
 bool has_semantic_error;
 FILE* codeout;
+bool in_main_fun;

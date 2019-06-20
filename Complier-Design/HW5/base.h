@@ -1,5 +1,6 @@
 #pragma once
 #define INITIAL_CAPACITY 4
+#define MAX_LOCAL 100
 typedef enum type {
     _int,
     _float,
@@ -10,4 +11,10 @@ typedef enum type {
     _function,
     _unknown
 } Type_t;
-typedef enum kind { function, parameter, variable, constant } Kind_t;
+typedef enum kind {
+    function,
+    parameter,
+    variable,
+    constant,
+    const_as_var
+} Kind_t;

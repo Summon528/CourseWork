@@ -2,13 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "codegen.h"
 #include "extern.h"
 #include "util.h"
 
-SymbolTable_t* newSymbolTable(int level) {
+SymbolTable_t* newSymbolTable(int level, int next_var) {
     SymbolTable_t* st = malloc(sizeof(SymbolTable_t));
     st->level = level;
     st->size = 0;
+    st->next_var = next_var;
     st->capacity = INITIAL_CAPACITY;
     st->entries = malloc(sizeof(SymbolEntry_t*) * st->capacity);
     return st;
@@ -40,6 +42,13 @@ void pushSTVar(SymbolTable_t* st, char* name, IntArray_t* arr) {
     se->arr_sig = arr;
     se->type = cur_type;
     se->params = NULL;
+    if (st->level != 0) {
+        se->var_num = st->next_var;
+        st->next_var++;
+        if (se->type == _double) st->next_var++;
+    } else {
+        genGlobal(name, cur_type);
+    }
 }
 
 void pushSTConst(SymbolTable_t* st, char* name, Literal_t* lit) {

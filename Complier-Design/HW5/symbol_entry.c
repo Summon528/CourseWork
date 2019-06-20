@@ -15,6 +15,7 @@ SymbolEntry_t* newSymbolEntry() {
     se->const_val = NULL;
     se->params = NULL;
     se->fun_defed = false;
+    se->var_num = -1;
     memset(se->name, 0, sizeof(se->name));
     return se;
 }

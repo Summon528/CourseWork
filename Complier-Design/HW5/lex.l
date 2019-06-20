@@ -398,7 +398,7 @@ id *new_id();
   	      if (Opt_Source)
   	        printf("%d:%s\n", linenum, buf);
   	      linenum++;
-		fprintf(codeout, "; Line#%d\n", linenum);
+		fprintf(codeout, "\n; L%d\n", linenum);
   	      buf[0] = '\0';
         }
 

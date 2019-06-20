@@ -14,8 +14,9 @@ void pushTS(TableStack_t* ts) {
         ts->capacity *= 2;
         ts->stack = realloc(ts->stack, sizeof(SymbolTable_t*) * ts->capacity);
     }
+    int next_var = getTopTS(ts) == NULL ? 0 : getTopTS(ts)->next_var;
     ts->stack[ts->top + 1] =
-        newSymbolTable(ts->top == -1 ? 0 : getTopTS(ts)->level + 1);
+        newSymbolTable(ts->top == -1 ? 0 : getTopTS(ts)->level + 1, next_var);
     ts->top++;
 }
 

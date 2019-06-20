@@ -1,6 +1,7 @@
 #include "util.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include "codegen.h"
 #include "extern.h"
 #include "string.h"
 #include "type_struct.h"
@@ -139,7 +140,7 @@ void checkAssign(Kind_t k, TypeStruct_t* a, TypeStruct_t* b) {
         panic("s s", KIND_STR[k], "is not assignable");
         return;
     }
-    promoteType1(b, a);
+    promoteType1(b, a, k == variable);
     if (!eqType2(a, b) ||
         !(eqType1(a, _int) || eqType1(a, _float) || eqType1(a, _double) ||
           eqType1(a, _bool) || eqType1(a, _string))) {
@@ -172,7 +173,7 @@ TypeStruct_t* checkFunc(char* name, TypeArray_t* ta) {
     for (int i = 0; i < ta->size; i++) {
         TypeStruct_t* tmp = newTypeStruct2(se->params->arr[i]->type,
                                            se->params->arr[i]->arr_sig, 0);
-        promoteType1(ta->arr[i], tmp);
+        promoteType1(ta->arr[i], tmp, true);
         if (!eqType2(tmp, ta->arr[i])) {
             if (!eqType1(ta->arr[i], _unknown)) {
                 panic("s s s d s t s t s", "incompatible argument to function",
@@ -199,7 +200,7 @@ void checkArrayInit(char* name, Type_t type, IntArray_t* dim,
 
     TypeStruct_t* tmp = newTypeStruct1(cur_type);
     for (int i = 0; i < isize; i++) {
-        promoteType1(init->arr[i], tmp);
+        promoteType1(init->arr[i], tmp, false);
         if (!eqType2(tmp, init->arr[i])) {
             if (!eqType1(init->arr[i], _unknown)) {
                 panic("s s s d s t s t s",
@@ -218,7 +219,7 @@ void checkArrayInit(char* name, Type_t type, IntArray_t* dim,
 
 void checkReturn(TypeStruct_t* a, Type_t target) {
     TypeStruct_t* tmp = newTypeStruct1(target);
-    promoteType1(a, tmp);
+    promoteType1(a, tmp, true);
     if (!eqType2(tmp, a)) {
         if (!eqType1(a, _unknown)) {
             panic("s t s t s", "incompatible return type (", tmp, "and", a,
@@ -248,13 +249,14 @@ void checkInLoop(int in_loop) {
     }
 }
 
-void promoteType1(TypeStruct_t* a, TypeStruct_t* target) {
+void promoteType1(TypeStruct_t* a, TypeStruct_t* target, bool gen_code) {
     if (eqType2(a, target)) return;
     if (eqIntArray(a->arr_sig, target->arr_sig)) {
         if (target->type == _unknown || a->type == _unknown) {
             a->type = _unknown;
             return;
         }
+        if (gen_code) genPromote(a->type, target->type);
         if (target->type == _double && (a->type == _int || a->type == _float)) {
             a->type = _double;
             return;
@@ -267,6 +269,6 @@ void promoteType1(TypeStruct_t* a, TypeStruct_t* target) {
 }
 
 void promoteType2(TypeStruct_t* a, TypeStruct_t* b) {
-    promoteType1(a, b);
-    promoteType1(b, a);
+    promoteType1(a, b, true);
+    promoteType1(b, a, true);
 }

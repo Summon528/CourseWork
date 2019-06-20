@@ -153,7 +153,7 @@ funct_def : scalar_type ID L_PAREN R_PAREN {
                 freeTypeStruct(tmp);
                 genFun($2);
             }
-            compound_statement  { genFunEnd(); }
+            compound_statement  { genReturn(_void); genFunEnd(); }
           | VOID ID L_PAREN parameter_list R_PAREN {
                 pushSTFunc(getTopTS(ts), $2, _void, $4, 0);
                 TypeStruct_t* tmp = newTypeStruct1(_void);
@@ -167,8 +167,9 @@ funct_def : scalar_type ID L_PAREN R_PAREN {
             var_const_stmt_list R_BRACE {
                 printST(getTopTS(ts));
                 popTS(ts);
-                freeParamArray($4);
+                genReturn(_void);
                 genFunEnd();
+                freeParamArray($4);
             }
           ;
 
@@ -191,6 +192,7 @@ identifier_list : identifier_list COMMA ID { pushSTVar(getTopTS(ts), $3, NULL); 
                     TypeStruct_t* tmp = newTypeStruct1(cur_type);
                     checkAssign(variable, tmp, $5);
                     pushSTVar(getTopTS(ts), $3, NULL);
+                    genAssign($3);
                     freeTypeStruct(tmp);
                     freeTypeStruct($5);
                 }
@@ -216,6 +218,7 @@ identifier_list : identifier_list COMMA ID { pushSTVar(getTopTS(ts), $3, NULL); 
                     TypeStruct_t* tmp = newTypeStruct1(cur_type);
                     checkAssign(variable, tmp, $3);
                     pushSTVar(getTopTS(ts), $1, NULL);
+                    genAssign($1);
                     freeTypeStruct(tmp);
                     freeTypeStruct($3);
                 }
@@ -235,7 +238,7 @@ const_decl : CONST scalar_type const_list SEMICOLON
 const_list : const_list COMMA ID ASSIGN_OP literal_const {
                 TypeStruct_t* tmp1 = newTypeStruct1(cur_type);
                 TypeStruct_t* tmp2 = newTypeStruct1($5->type);
-                checkAssign(variable, tmp1, tmp2);
+                checkAssign(const_as_var, tmp1, tmp2);
                 pushSTConst(getTopTS(ts), $3, $5);
                 freeTypeStruct(tmp1);
                 freeTypeStruct(tmp2);
@@ -243,7 +246,7 @@ const_list : const_list COMMA ID ASSIGN_OP literal_const {
            | ID ASSIGN_OP literal_const { 
                 TypeStruct_t* tmp1 = newTypeStruct1(cur_type);
                 TypeStruct_t* tmp2 = newTypeStruct1($3->type);
-                checkAssign(variable, tmp1, tmp2);
+                checkAssign(const_as_var, tmp1, tmp2);
                 pushSTConst(getTopTS(ts), $1, $3); 
                 freeTypeStruct(tmp1);
                 freeTypeStruct(tmp2);
@@ -274,7 +277,7 @@ statement : compound_statement { r_state = false; }
           ;     
 
 simple_statement : var_assign SEMICOLON
-                 | PRINT logical_expression SEMICOLON { checkIO($2); freeTypeStruct($2); }
+                 | PRINT { genPrintStart(); } logical_expression SEMICOLON { checkIO($3); genPrintEnd($3->type); freeTypeStruct($3); }
                  | READ variable_reference SEMICOLON { checkIO($2); freeTypeStruct($2); }
                  ;
 
@@ -335,6 +338,7 @@ increment_expression : increment_expression COMMA var_assign
 var_assign : ID ASSIGN_OP logical_expression { 
                 TypeStruct_t* tmp = getType(ts, $1, NULL, false);
                 if(!eqType1(tmp, _unknown)) checkAssign(findTS(ts, $1)->kind, tmp, $3); 
+                genAssign($1);
                 freeTypeStruct(tmp);
                 freeTypeStruct($3);
            }
@@ -353,11 +357,11 @@ jump_statement : CONTINUE SEMICOLON { checkInLoop(in_loop); }
                | BREAK SEMICOLON { checkInLoop(in_loop); }
                ;
 
-return_statement : RETURN logical_expression SEMICOLON { checkReturn($2, cur_fun_type); freeTypeStruct($2); }
+return_statement : RETURN logical_expression SEMICOLON { checkReturn($2, cur_fun_type); genReturn($2->type); freeTypeStruct($2); }
                 ; 
 
 variable_reference : ID dimension { $$ = getType(ts, $1, $2, false); }
-                   | ID { $$ = getType(ts, $1, NULL, false); }
+                   | ID { $$ = getType(ts, $1, NULL, false); genLoad($1); }
                    ;
 
 
@@ -428,7 +432,7 @@ scalar_type : INT { $$ = cur_type = $1; }
             ;
 
 sign_literal_const : SUB_OP sign_literal_const { $$ = checkUMinus($2), freeTypeStruct($2); }
-                   | literal_const { $$ = newTypeStruct1($1->type); }
+                   | literal_const { genLiteral($1, $1->type); $$ = newTypeStruct1($1->type); }
                    ;
 
 literal_const : INT_CONST

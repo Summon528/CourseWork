@@ -8,9 +8,10 @@ typedef struct symboltable {
     SymbolEntry_t** entries;
     int size;
     int capacity;
+    int next_var;
 } SymbolTable_t;
 
-SymbolTable_t* newSymbolTable(int level);
+SymbolTable_t* newSymbolTable(int level, int next_var);
 void pushSTParamArray(SymbolTable_t* st, ParamArray_t* da);
 void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, ParamArray_t* da,
                 int decl);

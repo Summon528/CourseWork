@@ -23,5 +23,5 @@ void checkReturn(TypeStruct_t* a, Type_t target);
 void checkIO(TypeStruct_t* a);
 void checkCondition(TypeStruct_t* a);
 void checkInLoop(int in_loop);
-void promoteType1(TypeStruct_t* a, TypeStruct_t* target);
+void promoteType1(TypeStruct_t* a, TypeStruct_t* target, bool gen_code);
 void promoteType2(TypeStruct_t* a, TypeStruct_t* b);

@@ -14,6 +14,7 @@ typedef struct SymbolEntry_t {
     ParamArray_t* params;
 
     bool fun_defed;
+    int var_num;
 } SymbolEntry_t;
 
 SymbolEntry_t* newSymbolEntry();

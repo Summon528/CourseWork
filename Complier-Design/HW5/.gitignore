@@ -8,3 +8,6 @@ test/
 a.out
 *.o
 *.j
+test.cm
+*.jar
+*.class
