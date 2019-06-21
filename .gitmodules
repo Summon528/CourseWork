@@ -1,6 +1,6 @@
 [submodule "Complier-Design/NCTU-Compiler-Tester"]
 	path = Complier-Design/NCTU-Compiler-Tester
 	url = git@github.com:Summon528/NCTU-Compiler-Tester.git
-[submodule "Database/0611262_hw2"]
-	path = Database/0611262_hw2
-	url = git@gitlab.com:dbms_2019/0611262/0611262_hw2.git
+[submodule "Database/simple_DBMS"]
+	path = Database/simple_DBMS
+	url = git@github.com:Summon528/simple_DBMS.git
