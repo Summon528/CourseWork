@@ -13,8 +13,8 @@ typedef struct symboltable {
 
 SymbolTable_t* newSymbolTable(int level, int next_var);
 void pushSTParamArray(SymbolTable_t* st, ParamArray_t* da);
-void pushSTFunc(SymbolTable_t* st, char* name, Type_t type, ParamArray_t* da,
-                int decl);
+SymbolEntry_t* pushSTFunc(SymbolTable_t* st, char* name, Type_t type,
+                          ParamArray_t* da, int decl);
 SymbolEntry_t* findST(SymbolTable_t* st, char* name);
 void printST(SymbolTable_t* st);
 void freeST(SymbolTable_t* st);

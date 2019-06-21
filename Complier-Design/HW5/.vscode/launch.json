@@ -29,7 +29,7 @@
             "name": "Parser Debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/parser",
+            "program": "${workspaceFolder}/compiler",
             "args": [
                 "test.cm"
             ],

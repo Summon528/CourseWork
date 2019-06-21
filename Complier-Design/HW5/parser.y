@@ -389,7 +389,7 @@ var_assign : ID ASSIGN_OP logical_expression {
             }
            ;
 
-function_invoke_statement : function_invoke SEMICOLON
+function_invoke_statement : function_invoke SEMICOLON { genFunDiscard($1->type); }
                           ;
 
 jump_statement : CONTINUE SEMICOLON { checkInLoop(in_loop); }
@@ -446,8 +446,8 @@ element : SUB_OP element { $$ = checkUMinus($2), genArith($2->type, "neg"), free
         | function_invoke
         ;
 
-function_invoke : ID L_PAREN logical_expression_list R_PAREN { $$ = checkFunc($1, $3), freeTypeArray($3); }
-                | ID L_PAREN R_PAREN { $$ = checkFunc($1, NULL); }
+function_invoke : ID L_PAREN logical_expression_list R_PAREN { genFunInvoke($1, $3); $$ = checkFunc($1, $3); freeTypeArray($3); }
+                | ID L_PAREN R_PAREN { genFunInvoke($1, NULL); $$ = checkFunc($1, NULL); }
                 ;
 
 logical_expression_list : logical_expression_list COMMA logical_expression { $$ = pushTypeArray($1, $3); }

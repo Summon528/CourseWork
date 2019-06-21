@@ -6,7 +6,7 @@
 #include "symbol_entry.h"
 #include "table_stack.h"
 
-static const char TYPE_DES_CHAR[] = {'I', 'F', 'D', 'Z', '?', '?', '?', '?'};
+static const char TYPE_DES_CHAR[] = {'I', 'F', 'D', 'Z', '?', 'V', '?', '?'};
 static const char TYPE_LOWER_CHAR[] = {'i', 'f', 'd', 'i', '?', '?', '?', '?'};
 
 void genFun(char *name) {
@@ -24,8 +24,28 @@ void genFun(char *name) {
             MAX_LOCAL);
         in_main_fun = true;
     } else {
+        SymbolEntry_t *se = findTS(ts, name);
+        if (se == NULL || se->kind != function) return;
+        fprintf(codeout, ".method public static %s", name);
+        genFunTypeDecl(se);
+        fprintf(codeout,
+                "\n"
+                ".limit stack 50\n"
+                ".limit locals %d\n",
+                MAX_LOCAL);
         in_main_fun = false;
     }
+}
+
+void genFunTypeDecl(SymbolEntry_t *se) {
+    if (se == NULL) return;
+    fprintf(codeout, "(");
+    if (se->params != NULL) {
+        for (int i = 0; i < se->params->size; i++) {
+            fprintf(codeout, "%c", TYPE_DES_CHAR[se->params->arr[i]->type]);
+        }
+    }
+    fprintf(codeout, ")%c", TYPE_DES_CHAR[se->type]);
 }
 
 void genFunEnd() { fprintf(codeout, ".end method\n\n"); }
@@ -198,4 +218,45 @@ void genRead(char *name) {
     fprintf(codeout, "invokevirtual java/util/Scanner/next%s()%c\n", type_name,
             TYPE_DES_CHAR[se->type]);
     fprintf(codeout, "%cstore %d\n", TYPE_LOWER_CHAR[se->type], se->var_num);
+}
+
+void genFunInvoke(char *name, TypeArray_t *ta) {
+    SymbolEntry_t *se = findTS(ts, name);
+    if (se == NULL || se->kind != function) return;
+    int p_cnt = se->params == NULL ? 0 : se->params->size;
+    int ta_size = ta == NULL ? 0 : ta->size;
+    if (p_cnt != ta_size) return;
+
+    int next_var = getTopTS(ts)->next_var;
+    for (int i = p_cnt - 1; i >= 0; i--) {
+        fprintf(codeout, "%cstore %d\n", TYPE_LOWER_CHAR[ta->arr[i]->type],
+                next_var);
+        if (ta->arr[i]->type == _double) {
+            next_var += 2;
+        } else {
+            next_var++;
+        }
+    }
+    for (int i = 0; i < p_cnt; i++) {
+        if (ta->arr[i]->type == _double) {
+            next_var -= 2;
+        } else {
+            next_var--;
+        }
+        fprintf(codeout, "%cload %d\n", TYPE_LOWER_CHAR[ta->arr[i]->type],
+                next_var);
+        genPromote1(ta->arr[i]->type, se->params->arr[i]->type);
+    }
+    fprintf(codeout, "invokestatic output/%s", se->name);
+    genFunTypeDecl(se);
+    fprintf(codeout, "\n");
+}
+
+void genFunDiscard(Type_t type) {
+    if (type == _void) return;
+    if (type == _double) {
+        gen("pop2");
+        return;
+    }
+    gen("pop");
 }

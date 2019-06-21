@@ -1,6 +1,8 @@
 #pragma once
 #include "base.h"
 #include "literal.h"
+#include "symbol_entry.h"
+#include "type_array.h"
 
 void genFun(char *name);
 void genFunEnd();
@@ -20,3 +22,7 @@ void gen(char *instr);
 char *getLabel();
 char *genLabel(char *label);
 void genRead(char *name);
+void genFun(char *name);
+void genFunInvoke(char *name, TypeArray_t *ta);
+void genFunTypeDecl(SymbolEntry_t *se);
+void genFunDiscard(Type_t type);

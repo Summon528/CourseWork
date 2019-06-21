@@ -173,7 +173,7 @@ TypeStruct_t* checkFunc(char* name, TypeArray_t* ta) {
     for (int i = 0; i < ta->size; i++) {
         TypeStruct_t* tmp = newTypeStruct2(se->params->arr[i]->type,
                                            se->params->arr[i]->arr_sig, 0);
-        promoteType1(ta->arr[i], tmp, true);
+        promoteType1(ta->arr[i], tmp, false);
         if (!eqType2(tmp, ta->arr[i])) {
             if (!eqType1(ta->arr[i], _unknown)) {
                 panic("s s s d s t s t s", "incompatible argument to function",
