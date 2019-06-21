@@ -21,8 +21,8 @@ int main(int argc, char **argv) {
         exit(0);
     }
 
-    codeout = fopen("code.j", "w");
-    fprintf(codeout, ".class public code\n.super java/lang/Object\n\n");
+    codeout = fopen("output.j", "w");
+    fprintf(codeout, ".class public output\n.super java/lang/Object\n\n");
     fprintf(codeout, "; L1\n");
 
     ts = newTableStack();

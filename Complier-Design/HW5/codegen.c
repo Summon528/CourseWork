@@ -34,7 +34,7 @@ void genLoad(char *name) {
     if (se->kind == constant) {
         genLiteral(se->const_val, se->type);
     } else if (se->kind == variable && se->var_num == -1) {
-        fprintf(codeout, "getstatic code/%s %c\n", se->name,
+        fprintf(codeout, "getstatic output/%s %c\n", se->name,
                 TYPE_DES_CHAR[se->type]);
     } else if (se->kind == variable || se->kind == parameter) {
         fprintf(codeout, "%cload %d\n", TYPE_LOWER_CHAR[se->type], se->var_num);
@@ -67,7 +67,7 @@ void genAssign(char *name) {
     SymbolEntry_t *se = findTS(ts, name);
     if (se == NULL || (se->kind != parameter && se->kind != variable)) return;
     if (se->var_num == -1) {
-        fprintf(codeout, "putstatic code/%s %c\n", name,
+        fprintf(codeout, "putstatic output/%s %c\n", name,
                 TYPE_DES_CHAR[se->type]);
         return;
     }

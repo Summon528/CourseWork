@@ -1,4 +1,4 @@
-TARGET = parser
+TARGET = compiler
 CC = gcc -g -Wall
 LEX = flex
 YACC = yacc
@@ -11,7 +11,7 @@ OBJ+=y.tab.o
 
 all: $(TARGET)
 
-parser: $(OBJ) 
+compiler: $(OBJ) 
 	$(CC) $^ -o $(TARGET) $(LIBS)
 
 y.tab.c y.tab.h: parser.y
