@@ -333,20 +333,28 @@ while_statement : WHILE { $<text>$ = genLabel(getLabel()); }
                 }
                 ;
 
-for_statement : FOR L_PAREN initial_expression_list SEMICOLON { $<text>$ = genLabel(getLabel()); }
+for_statement : FOR L_PAREN initial_expression_list SEMICOLON
+                { $<text>$ = genLabel(getLabel()); } // 5 control start
                 control_expression SEMICOLON {
-                     $<text>$ = getLabel();
+                     $<text>$ = getLabel();   // 8 for block end
                      fprintf(codeout, "ifeq %s\n", $<text>$);
-                } increment_expression_list R_PAREN {
+                } 
+                { $<text>$ = getLabel(); fprintf(codeout, "goto %s\n", $<text>$); } // 9 for block start
+                { $<text>$ = getLabel(); genLabel($<text>$); } // 10 increment start
+                increment_expression_list R_PAREN {
                     checkCondition($6);
                     freeTypeStruct($6); 
                     in_loop++;
+                    fprintf(codeout, "goto %s\n", $<text>5);
+                    genLabel($<text>9);
                 } compound_statement {
                     in_loop--;
-                    fprintf(codeout, "goto %s\n", $<text>5);
+                    fprintf(codeout, "goto %s\n", $<text>10);
                     genLabel($<text>8);
                     free($<text>5);
                     free($<text>8);
+                    free($<text>9);
+                    free($<text>10);
                 }
               ;
 
