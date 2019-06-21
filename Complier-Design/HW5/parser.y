@@ -280,7 +280,17 @@ statement : compound_statement { r_state = false; }
 
 simple_statement : var_assign SEMICOLON
                  | PRINT { genPrintStart(); } logical_expression SEMICOLON { checkIO($3); genPrintEnd($3->type); freeTypeStruct($3); }
-                 | READ variable_reference SEMICOLON { checkIO($2); freeTypeStruct($2); }
+                 | READ ID dimension SEMICOLON { 
+                    TypeStruct_t *tmp = getType(ts, $2, $3, false);
+                    checkIO(tmp);
+                    freeTypeStruct(tmp); 
+                 }
+                 | READ ID SEMICOLON { 
+                    TypeStruct_t *tmp = getType(ts, $2, NULL, false);
+                    genRead($2);
+                    checkIO(tmp);
+                    freeTypeStruct(tmp);
+                  }
                  ;
 
 conditional_statement : _conditional_statement compound_statement { genLabel($1); free($1);}

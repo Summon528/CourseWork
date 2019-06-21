@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
 
     codeout = fopen("output.j", "w");
     fprintf(codeout, ".class public output\n.super java/lang/Object\n\n");
+    fprintf(codeout, ".field public static _sc Ljava/util/Scanner;\n");
     fprintf(codeout, "; L1\n");
 
     ts = newTableStack();

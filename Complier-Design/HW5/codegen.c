@@ -11,11 +11,17 @@ static const char TYPE_LOWER_CHAR[] = {'i', 'f', 'd', 'i', '?', '?', '?', '?'};
 
 void genFun(char *name) {
     if (strcmp(name, "main") == 0) {
-        fprintf(codeout,
-                ".method public static main([Ljava/lang/String;)V\n"
-                ".limit stack 50\n"
-                ".limit locals %d\n",
-                MAX_LOCAL);
+        fprintf(
+            codeout,
+            ".method public static main([Ljava/lang/String;)V\n"
+            ".limit stack 50\n"
+            ".limit locals %d\n"
+            "new java/util/Scanner\n"
+            "dup\n"
+            "getstatic java/lang/System/in Ljava/io/InputStream;\n"
+            "invokespecial java/util/Scanner/<init>(Ljava/io/InputStream;)V\n"
+            "putstatic output/_sc Ljava/util/Scanner;\n",
+            MAX_LOCAL);
         in_main_fun = true;
     } else {
         in_main_fun = false;
@@ -166,4 +172,30 @@ char *getLabel() {
 char *genLabel(char *label) {
     fprintf(codeout, "%s:\n", label);
     return label;
+}
+
+void genRead(char *name) {
+    SymbolEntry_t *se = findTS(ts, name);
+    if (se == NULL || (se->kind != parameter && se->kind != variable)) return;
+    fprintf(codeout, "getstatic output/_sc Ljava/util/Scanner;\n");
+    char *type_name;
+    switch (se->type) {
+        case _int:
+            type_name = "Int";
+            break;
+        case _float:
+            type_name = "Float";
+            break;
+        case _double:
+            type_name = "Double";
+            break;
+        case _bool:
+            type_name = "Boolean";
+            break;
+        default:
+            return;
+    }
+    fprintf(codeout, "invokevirtual java/util/Scanner/next%s()%c\n", type_name,
+            TYPE_DES_CHAR[se->type]);
+    fprintf(codeout, "%cstore %d\n", TYPE_LOWER_CHAR[se->type], se->var_num);
 }

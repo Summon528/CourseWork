@@ -19,3 +19,4 @@ void genRelation(Type_t t, char *instr);
 void gen(char *instr);
 char *getLabel();
 char *genLabel(char *label);
+void genRead(char *name);
