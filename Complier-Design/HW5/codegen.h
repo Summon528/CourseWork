@@ -17,4 +17,5 @@ void genPromote2(Type_t a, Type_t b);
 void genArith(Type_t t, char *instr);
 void genRelation(Type_t t, char *instr);
 void gen(char *instr);
-char *genLabel();
+char *getLabel();
+char *genLabel(char *label);

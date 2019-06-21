@@ -115,7 +115,7 @@ char *genPromote0(Type_t a, Type_t target) {
 
 void genPromote1(Type_t a, Type_t target) {
     char *s = genPromote0(a, target);
-    fprintf(codeout, "%s\n", s);
+    if (s[0] != '\0') fprintf(codeout, "%s\n", s);
     free(s);
 }
 
@@ -144,7 +144,7 @@ void genRelation(Type_t t, char *instr) {
     } else {
         fprintf(codeout, "%ccmpl\n", TYPE_LOWER_CHAR[t]);
     }
-    char *label1 = genLabel(), *label2 = genLabel();
+    char *label1 = getLabel(), *label2 = getLabel();
     fprintf(codeout,
             "%s %s\n"
             "iconst_0\n"
@@ -157,8 +157,13 @@ void genRelation(Type_t t, char *instr) {
     free(label2);
 }
 
-char *genLabel() {
+char *getLabel() {
     char *s = malloc(sizeof(char) * 10);
     sprintf(s, "G%d", label_cnt++);
     return s;
+}
+
+char *genLabel(char *label) {
+    fprintf(codeout, "%s:\n", label);
+    return label;
 }

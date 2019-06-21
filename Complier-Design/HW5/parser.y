@@ -13,6 +13,7 @@ extern Type_t cur_type;
 extern Type_t cur_fun_type;
 extern int in_loop;
 extern bool r_state;
+extern FILE* codeout;
 
 int yylex();
 int yyerror( char *msg );
@@ -101,6 +102,7 @@ int yyerror( char *msg );
 %type<type_struct> term factor sign_literal_const function_invoke control_expression;
 %type<type_array> logical_expression_list literal_list initial_array;
 %type<type> scalar_type;
+%type<text> _conditional_statement;
 %start program
 %%
 
@@ -281,34 +283,61 @@ simple_statement : var_assign SEMICOLON
                  | READ variable_reference SEMICOLON { checkIO($2); freeTypeStruct($2); }
                  ;
 
-conditional_statement : _conditional_statement compound_statement
-                      | _conditional_statement compound_statement ELSE compound_statement
+conditional_statement : _conditional_statement compound_statement { genLabel($1); free($1);}
+                      | _conditional_statement compound_statement {
+                            $<text>$ = getLabel();
+                            fprintf(codeout, "goto %s\n%s:\n", $<text>$, $1); // "
+                            free($1);
+                        } ELSE compound_statement { genLabel($<text>3); free($<text>3);} 
                       ;
 
+
 _conditional_statement : IF L_PAREN logical_expression R_PAREN  {
+                            $$ = getLabel();
+                            fprintf(codeout, "ifeq %s\n", $$);
                             checkCondition($3);
                             freeTypeStruct($3);
                         };
 
-while_statement : WHILE L_PAREN logical_expression R_PAREN {
-                        checkCondition($3);
-                        freeTypeStruct($3);
+while_statement : WHILE { $<text>$ = genLabel(getLabel()); }
+                  L_PAREN logical_expression R_PAREN {
+                        char *s = getLabel();
+                        fprintf(codeout, "ifeq %s\n", s);
+                        $<text>$ = s;
+                        checkCondition($4);
+                        freeTypeStruct($4);
                         in_loop++; 
-                    } compound_statement { in_loop--; }
-                | DO { in_loop++; } compound_statement { in_loop--; } WHILE L_PAREN logical_expression R_PAREN SEMICOLON {
+                    } compound_statement {
+                        fprintf(codeout, "goto %s\n", $<text>2);
+                        genLabel($<text>6);
+                        free($<text>2);
+                        free($<text>6);
+                        in_loop--; 
+                    }
+                | DO { in_loop++; $<text>$ = genLabel(getLabel()); } compound_statement { in_loop--; }
+                  WHILE L_PAREN logical_expression R_PAREN SEMICOLON {
+                    fprintf(codeout, "ifne %s\n", $<text>2);
+                    free($<text>2);
                     checkCondition($7);
                     freeTypeStruct($7);
                 }
                 ;
 
-for_statement : FOR L_PAREN initial_expression_list SEMICOLON control_expression SEMICOLON increment_expression_list R_PAREN {
-                    checkCondition($5);
-                    freeTypeStruct($5); 
+for_statement : FOR L_PAREN initial_expression_list SEMICOLON { $<text>$ = genLabel(getLabel()); }
+                control_expression SEMICOLON {
+                     $<text>$ = getLabel();
+                     fprintf(codeout, "ifeq %s\n", $<text>$);
+                } increment_expression_list R_PAREN {
+                    checkCondition($6);
+                    freeTypeStruct($6); 
                     in_loop++;
+                } compound_statement {
+                    in_loop--;
+                    fprintf(codeout, "goto %s\n", $<text>5);
+                    genLabel($<text>8);
+                    free($<text>5);
+                    free($<text>8);
                 }
-                    compound_statement {
-                        in_loop--;
-                    }
               ;
 
 initial_expression_list : initial_expression
