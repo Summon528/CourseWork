@@ -189,7 +189,7 @@ parameter_list : parameter_list COMMA scalar_type ID { $$ = pushParamArray($1, n
 
 var_decl : scalar_type identifier_list SEMICOLON
 
-identifier_list : identifier_list COMMA ID { pushSTVar(getTopTS(ts), $3, NULL); }
+identifier_list : identifier_list COMMA ID { pushSTVar(getTopTS(ts), $3, NULL); genEmptyAssign($3); }
                 | identifier_list COMMA ID ASSIGN_OP logical_expression {
                     TypeStruct_t* tmp = newTypeStruct1(cur_type);
                     checkAssign(variable, tmp, $5);
@@ -224,7 +224,7 @@ identifier_list : identifier_list COMMA ID { pushSTVar(getTopTS(ts), $3, NULL); 
                     freeTypeStruct(tmp);
                     freeTypeStruct($3);
                 }
-                | ID { pushSTVar(getTopTS(ts), $1, NULL); }
+                | ID { pushSTVar(getTopTS(ts), $1, NULL); genEmptyAssign($1); }
                 ;
                 
 initial_array : L_BRACE literal_list R_BRACE { $$ = $2; }

@@ -260,3 +260,28 @@ void genFunDiscard(Type_t type) {
     }
     gen("pop");
 }
+
+void genEmptyAssign(char *name) {
+    SymbolEntry_t *se = findTS(ts, name);
+    if (se == NULL || se->kind != variable || se->var_num == -1) return;
+    switch (se->type) {
+        case _bool:
+            fprintf(codeout, "iconst_0\n");
+            break;
+        case _string:
+            fprintf(codeout, "ldc \"\"\n");
+            break;
+        case _double:
+            fprintf(codeout, "ldc2_w 0.0\n");
+            break;
+        case _float:
+            fprintf(codeout, "ldc 0.0\n");
+            break;
+        case _int:
+            fprintf(codeout, "ldc 0\n");
+            break;
+        default:
+            return;
+    }
+    genAssign(name);
+}

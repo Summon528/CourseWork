@@ -26,3 +26,4 @@ void genFun(char *name);
 void genFunInvoke(char *name, TypeArray_t *ta);
 void genFunTypeDecl(SymbolEntry_t *se);
 void genFunDiscard(Type_t type);
+void genEmptyAssign(char *name);
