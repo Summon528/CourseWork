@@ -14,7 +14,8 @@ extern Type_t cur_fun_type;
 extern int in_loop;
 extern bool r_state;
 extern FILE* codeout;
-
+extern IntArray_t *exit_labels, *continue_labels;
+extern int label_cnt;
 int yylex();
 int yyerror( char *msg );
 
@@ -309,8 +310,9 @@ _conditional_statement : IF L_PAREN logical_expression R_PAREN  {
                             freeTypeStruct($3);
                         };
 
-while_statement : WHILE { $<text>$ = genLabel(getLabel()); }
+while_statement : WHILE { pushIntArray(continue_labels, label_cnt); $<text>$ = genLabel(getLabel()); }
                   L_PAREN logical_expression R_PAREN {
+                        pushIntArray(exit_labels, label_cnt);
                         char *s = getLabel();
                         fprintf(codeout, "ifeq %s\n", s);
                         $<text>$ = s;
@@ -323,24 +325,33 @@ while_statement : WHILE { $<text>$ = genLabel(getLabel()); }
                         free($<text>2);
                         free($<text>6);
                         in_loop--; 
+                        popIntArray(continue_labels);
+                        popIntArray(exit_labels);
                     }
-                | DO { in_loop++; $<text>$ = genLabel(getLabel()); } compound_statement { in_loop--; }
+                | DO { pushIntArray(continue_labels, label_cnt); in_loop++; $<text>$ = genLabel(getLabel()); } 
+                 { pushIntArray(exit_labels, label_cnt); $<text>$ = getLabel(); } 
+                  compound_statement { in_loop--; }
                   WHILE L_PAREN logical_expression R_PAREN SEMICOLON {
                     fprintf(codeout, "ifne %s\n", $<text>2);
                     free($<text>2);
-                    checkCondition($7);
-                    freeTypeStruct($7);
+                    genLabel($<text>3);
+                    free($<text>3);
+                    checkCondition($8);
+                    freeTypeStruct($8);
+                    popIntArray(continue_labels);
+                    popIntArray(exit_labels);
                 }
                 ;
 
 for_statement : FOR L_PAREN initial_expression_list SEMICOLON
                 { $<text>$ = genLabel(getLabel()); } // 5 control start
                 control_expression SEMICOLON {
+                     pushIntArray(exit_labels, label_cnt);
                      $<text>$ = getLabel();   // 8 for block end
                      fprintf(codeout, "ifeq %s\n", $<text>$);
                 } 
                 { $<text>$ = getLabel(); fprintf(codeout, "goto %s\n", $<text>$); } // 9 for block start
-                { $<text>$ = getLabel(); genLabel($<text>$); } // 10 increment start
+                { pushIntArray(continue_labels, label_cnt); $<text>$ = getLabel(); genLabel($<text>$); } // 10 increment start
                 increment_expression_list R_PAREN {
                     checkCondition($6);
                     freeTypeStruct($6); 
@@ -355,6 +366,8 @@ for_statement : FOR L_PAREN initial_expression_list SEMICOLON
                     free($<text>8);
                     free($<text>9);
                     free($<text>10);
+                    popIntArray(continue_labels);
+                    popIntArray(exit_labels);
                 }
               ;
 
@@ -400,8 +413,8 @@ var_assign : ID ASSIGN_OP logical_expression {
 function_invoke_statement : function_invoke SEMICOLON { genFunDiscard($1->type); }
                           ;
 
-jump_statement : CONTINUE SEMICOLON { checkInLoop(in_loop); }
-               | BREAK SEMICOLON { checkInLoop(in_loop); }
+jump_statement : CONTINUE SEMICOLON { checkInLoop(in_loop); fprintf(codeout, "goto G%d\n", continue_labels->arr[continue_labels->size - 1]);}
+               | BREAK SEMICOLON { checkInLoop(in_loop); fprintf(codeout, "goto G%d\n", exit_labels->arr[exit_labels->size - 1]);}
                ;
 
 return_statement : RETURN logical_expression SEMICOLON { checkReturn($2, cur_fun_type); genReturn($2->type); freeTypeStruct($2); }

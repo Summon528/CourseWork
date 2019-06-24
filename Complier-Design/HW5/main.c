@@ -33,6 +33,8 @@ int main(int argc, char **argv) {
     r_state = false;
     label_cnt = 0;
     has_semantic_error = false;
+    exit_labels = newIntArray();
+    continue_labels = newIntArray();
     pushTS(ts);
 
     yyparse(); /* primary procedure of parser */

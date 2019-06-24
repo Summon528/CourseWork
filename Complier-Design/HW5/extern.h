@@ -10,3 +10,4 @@ bool has_semantic_error;
 FILE* codeout;
 bool in_main_fun;
 int label_cnt;
+IntArray_t *exit_labels, *continue_labels;

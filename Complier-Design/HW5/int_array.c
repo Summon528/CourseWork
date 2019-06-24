@@ -54,3 +54,8 @@ IntArray_t* copyIntArray(IntArray_t* other, int st) {
     for (int i = st; i < other->size; i++) pushIntArray(a, other->arr[i]);
     return a;
 }
+
+void popIntArray(IntArray_t* a) {
+    if (a == NULL || a->size <= 0) return;
+    a->size--;
+}
