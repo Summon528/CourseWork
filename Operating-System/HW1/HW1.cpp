@@ -80,65 +80,85 @@ void replace_proc(const std::vector<std::string> &args) {
         c_args.emplace_back(const_cast<char *>(s.c_str()));
     }
     c_args.emplace_back(nullptr);
-    if (const auto r = execvp(c_args.front(), c_args.data()); r == -1) {
+    const auto r = execvp(c_args.front(), c_args.data());
+    if (r == -1) {
         std::cerr << "failed: " << c_args.front() << std::endl;
         _exit(EXIT_FAILURE);
     }
 }
 
 void spawn(const Input &input) {
-    if (const auto pid(fork()); pid == 0) {
-        replace_proc(input.args1);
-    } else if (pid > 0) {
-        exit(0);
+    const auto pid1(fork());
+    if (pid1 == 0) {
+        const auto pid2(fork());
+        if (pid2 == 0) {
+            replace_proc(input.args1);
+        } else if (pid2 > 0) {
+            exit(0);
+        }
+    } else {
+        waitpid(pid1, nullptr, 0);
     }
 }
 
 void exec(const Input &input) {
-    if (input.direction == OUT) {
-        const auto fd =
-            open(input.file_name.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC,
-                 S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-        dup2(fd, STDOUT_FILENO);
-        close(fd);
-        replace_proc(input.args1);
-    } else if (input.direction == IN) {
-        const auto fd =
-            open(input.file_name.c_str(), O_CREAT | O_RDONLY | O_CLOEXEC);
-        dup2(fd, STDIN_FILENO);
-        close(fd);
-        replace_proc(input.args1);
-    } else if (input.use_pipe) {
-        int fd[2];
-        pipe(static_cast<int *>(fd));
-        const auto pid(fork());
-        if (pid == 0) {
-            dup2(fd[1], STDOUT_FILENO);
-            close(fd[0]);
-            close(fd[1]);
+    const auto pid(fork());
+    if (pid == 0) {
+        if (input.direction == OUT) {
+            const auto fd = open(input.file_name.c_str(),
+                                 O_CREAT | O_TRUNC | O_WRONLY | O_CLOEXEC,
+                                 S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+            dup2(fd, STDOUT_FILENO);
+            close(fd);
             replace_proc(input.args1);
-        } else if (pid > 0) {
+        } else if (input.direction == IN) {
+            const auto fd =
+                open(input.file_name.c_str(), O_CREAT | O_RDONLY | O_CLOEXEC);
+            dup2(fd, STDIN_FILENO);
+            close(fd);
+            replace_proc(input.args1);
+        } else {
+            replace_proc(input.args1);
+        }
+    } else {
+        waitpid(pid, nullptr, 0);
+    }
+}
+
+void exec_pipe(const Input &input) {
+    int fd[2];
+    pipe(static_cast<int *>(fd));
+    const auto pid1(fork());
+    if (pid1 == 0) {
+        dup2(fd[1], STDOUT_FILENO);
+        close(fd[0]);
+        close(fd[1]);
+        replace_proc(input.args1);
+    } else if (pid1 > 0) {
+        const auto pid2(fork());
+        if (pid2 == 0) {
             dup2(fd[0], STDIN_FILENO);
             close(fd[0]);
             close(fd[1]);
             replace_proc(input.args2);
+        } else if (pid2 > 0) {
+            close(fd[0]);
+            close(fd[1]);
+            waitpid(pid1, nullptr, 0);
+            waitpid(pid2, nullptr, 0);
         }
-    } else {
-        replace_proc(input.args1);
     }
 }
 
 int main() {
     while (true) {
         const auto input(get_input());
-        if (const auto pid(fork()); pid == 0) {
-            if (input.detach) {
-                spawn(input);
-            } else {
-                exec(input);
-            }
-        } else if (pid > 0) {
-            waitpid(pid, nullptr, 0);
+        if (input.detach) {
+            spawn(input);
+        } else if (input.use_pipe) {
+            exec_pipe(input);
+        } else {
+            exec(input);
         }
     }
 }
