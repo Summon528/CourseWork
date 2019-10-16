@@ -85,4 +85,7 @@ int main() {
         }
         printf("Checksum: %lu\n", (unsigned long)checksum);
     }
+
+    shmctl(matrix_id, IPC_RMID, NULL);
+    shmctl(ans_id, IPC_RMID, NULL);
 }
