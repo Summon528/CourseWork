@@ -19,16 +19,25 @@ class MushroomModel:
                     continue
                 data.append(line.split(","))
 
+        prev_data = list(data[0])
         skip = set([])
         for feature in data:
             for idx, event in enumerate(feature):
                 if event == "?":
                     skip.add(idx)
-                    break
+                if event != prev_data[idx]:
+                    prev_data[idx] = None
 
-        for i in data:
-            for s in skip:
-                i.pop(s)
+        for idx, val in enumerate(prev_data):
+            if val != None:
+                skip.add(idx)
+        
+        skip = sorted(list(skip))
+        skip_cnt = 0
+        for s in skip:
+            for i in data:
+                i.pop(s - skip_cnt)
+            skip_cnt += 1
 
         labels = set([])
         result = []
