@@ -44,7 +44,7 @@ class IrisModel:
         stats = {x: [[] for i in range(self.feature_cnt)] for x in self.labels}
         for key, val in data:
             for idx, event in enumerate(key):
-                stats[val][idx].append(float(key[idx]))
+                stats[val][idx].append(float(event))
 
         self.mean = {x: [0] * self.feature_cnt for x in self.labels}
         self.std = {x: [0] * self.feature_cnt for x in self.labels}
@@ -69,25 +69,73 @@ class IrisModel:
             for i in range(self.feature_cnt):
                 prop = norm(float(item[i]), self.std[label][i],
                             self.mean[label][i])
-                sun += math.log(prop)
+                if prop == 0:
+                    sun += -1e9
+                else:
+                    sun += math.log(prop)
             return math.log(self.prop[label]) + sun
 
         return max(self.labels, key=score)
 
-
 def main():
     model = IrisModel()
     data = model.loaddata()
-    random.shuffle(data)
-    model.fit(data[20:])
-    good, bad = 0, 0
-    for i in data[:20]:
+    random.shuffle(data, lambda: 0.611262)
+    data_size = len(data)
+
+    print("Holdout validation")
+    train_end_idx = math.floor(data_size * 0.7)
+    model.fit(data[:train_end_idx])
+    result = defaultdict(lambda: defaultdict(int))
+    for i in data[train_end_idx:]:
         ans = model.predict(i[0])
-        if ans == i[1]:
-            good += 1
-        else:
-            bad += 1
-    print(good, bad)
+        result[i[1]][ans] += 1
+    print_result(result)
+    print()
+
+    print("K-fold cross-validation")
+    part = data_size // 3
+    splitted_data = [data[:part], data[part : part * 2], data[part * 2 :]]
+    result = defaultdict(lambda: defaultdict(int))
+    for i in range(3):
+        to_train = list(splitted_data)
+        to_test = to_train.pop(i)
+        model.fit(to_train[0] + to_train[1])
+        for i in to_test:
+            ans = model.predict(i[0])
+            result[i[1]][ans] += 1
+    print_result(result)
+
+
+def print_result(result):
+    good, bad = 0, 0
+    print("", end="\t\t")
+    keys = list(result.keys())
+    for key in keys:
+        print(key, end="\t")
+    print("Precision", end="\t\t")
+    print("")
+    for key, val in result.items():
+        print(key, end="\t")
+        sun = 0
+        for key2 in keys:
+            if key2 == key:
+                good += val[key2]
+            else:
+                bad += val[key2]
+            print(val[key2], end="\t\t")
+            sun += val[key2]
+        print("{:.4}".format(val[key] / sun))
+    print("Recall", end="\t\t")
+    for key in keys:
+        sun = 0
+        for key2 in keys:
+            sun += result[key2][key]
+        print("{:.4}".format(result[key][key] / sun), end="\t\t")
+    print('')
+    print("Accuracy: ", good / (good + bad))
+    print("=====")
+
 
 
 if __name__ == "__main__":
