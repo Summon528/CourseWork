@@ -78,26 +78,27 @@ Delay:
 		strb r5, [r4]
 		b Exit
 	Exit:
+		ldr  r4, =on
+		ldrb r4, [r4]
+		cbz  r4, SkipAdd
 		add r8, #1
+		SkipAdd:
 		cmp r8, r9
 		blt  CheckBtn
 		BX LR
 	Toggle:
 		ldr  r4, =on
-		ldrb r4, [r4]
-		cbnz  r4, TurnOff
-		b    StartLED
-	TurnOff:
-		ldr  r4, =leds
-		ldr  r5, =0xFFFFFFFF
+		ldrb r5, [r4]
+		cbnz  r5, Pause
+		ldr  r5, =0x1
 		strb r5, [r4]
-		bl   DisplayLED
+		b    Exit
+	Pause:
 		ldr  r4, =on
 		ldr  r5, =0x0
 		strb r5, [r4]
-		WaitBtn:
-			bl   CheckBtn
-			b    WaitBtn
+		b   CheckBtn
+
 
 
 GPIO_init:
