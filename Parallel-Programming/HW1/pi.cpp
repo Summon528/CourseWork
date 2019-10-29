@@ -5,29 +5,23 @@
 
 typedef unsigned long long ull;
 
-static unsigned int seed;
-
 void *toss(void *) __attribute__((optimize("-ffast-math")));
 
-static inline int my_rand(void) {
-    seed = 1103515245 * seed + 12345 & 0x7FFFFFFF;
-    return seed;
-}
-
 void *toss(void *number_of_tosses) {
+    unsigned int seed = (time(NULL) * pthread_self());
     ull number_in_circle = 0;
     double x, y;
     for (ull toss = 0; toss < (ull)number_of_tosses; toss++) {
-        x = (double)my_rand() / 0x7FFFFFFF;
-        y = (double)my_rand() / 0x7FFFFFFF;
+        x = (double)seed / 0xFFFFFFFF;
+        seed = 48271 * seed;
+        y = (double)seed / 0xFFFFFFFF;
+        seed = 48271 * seed;
         if (x * x + y * y <= 1) number_in_circle++;
     }
     return (void *)number_in_circle;
 }
 
 int main(int argc, char **argv) {
-    seed = time(NULL);
-
     double pi_estimate;
     ull number_of_cpu, number_of_tosses, number_in_circle;
     number_of_cpu = atoi(argv[1]);
