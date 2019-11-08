@@ -16,18 +16,19 @@ char key_map[4][4] = {{'1', '4', '7', '*'},
 void keypad_init() {
     RCC->AHB2ENR = RCC->AHB2ENR | 0x1;
     GPIOA->MODER = GPIOA->MODER & 0xFD5403FF;
+    GPIOA->PUPDR = GPIOA->PUPDR | 0x2A800;
 }
 
-char keypad_scan() {
+int keypad_scan() {
     for (int i = 0; i < 4; i++) {
         GPIOA->ODR = 0x1 << x_pin[i];
         for (int j = 0; j < 4; j++) {
             int cnt = 0;
-            for (int k = 0; k < 2000; k++) {
+            for (int k = 0; k < 100; k++) {
                 uint32_t on = (GPIOA->IDR >> 5) & (0x1 << j);
                 if (on) cnt++;
             }
-            if (cnt >= 1998) return key_map[i][j];
+            if (cnt >= 99) return key_map[i][j];
         }
     }
     return -1;
@@ -35,7 +36,12 @@ char keypad_scan() {
 
 void set_limit(int x) { max7219_send(0x0B, x - 1); }
 
-void show_num(char x) {
+void show_num(int x) {
+    if (x == -1) {
+        max7219_send(0xC, 0x0);
+        return;
+    }
+    max7219_send(0xC, 0x1);
     if (!isdigit(x)) return;
     max7219_send(0x1, x - '0');
 }
