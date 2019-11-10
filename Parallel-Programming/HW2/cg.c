@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
     //---------------------------------------------------------------------
     norm_temp1 = 0.0;
     norm_temp2 = 0.0;
-    #pragma omp parallel for private(j) reduction(+:norm_temp1,norm_temp2)
+    #pragma omp parallel for private(j) reduction(+:norm_temp1,norm_temp2)  schedule(guided, 32)
     for (j = 0; j < cols; j++) {
       norm_temp1 = norm_temp1 + x[j] * z[j];
       norm_temp2 = norm_temp2 + z[j] * z[j];
@@ -336,7 +336,7 @@ static void conj_grad(int colidx[],
   // rho = r.r
   // Now, obtain the norm of r: First, sum squares of r elements locally...
   //---------------------------------------------------------------------
-  #pragma omp parallel for private(j) reduction(+:rho)
+  #pragma omp parallel for private(j) reduction(+:rho) schedule(guided, 32)
   for (j = 0; j < cols; j++) {
     rho = rho + r[j]*r[j];
   }
@@ -372,7 +372,7 @@ static void conj_grad(int colidx[],
     // Obtain p.q
     //---------------------------------------------------------------------
     d = 0.0;
-    #pragma omp parallel for private(j) reduction(+:d)
+    #pragma omp parallel for private(j) reduction(+:d) schedule(guided, 32)
     for (j = 0; j < cols; j++) {
       d = d + p[j]*q[j];
     }
@@ -429,7 +429,7 @@ static void conj_grad(int colidx[],
   //---------------------------------------------------------------------
   // At this point, r contains A.z
   //---------------------------------------------------------------------
-  #pragma omp parallel for private(j,d) reduction(+:sum)
+  #pragma omp parallel for private(j,d) reduction(+:sum) schedule(guided, 32)
   for (j = 0; j < lastcol-firstcol+1; j++) {
     d   = x[j] - r[j];
     sum = sum + d*d;
@@ -502,7 +502,7 @@ static void makea(int n,
     sprnvc(n, nzv, nn1, vc, ivc);
     vecset(n, vc, ivc, &nzv, iouter+1, 0.5);
     arow[iouter] = nzv;
-    #pragma omp parallel for private(ivelt) schedule(static)
+    #pragma omp parallel for private(ivelt) schedule(guided, 32)
     for (ivelt = 0; ivelt < nzv; ivelt++) {
       acol[iouter][ivelt] = ivc[ivelt] - 1;
       aelt[iouter][ivelt] = vc[ivelt];
