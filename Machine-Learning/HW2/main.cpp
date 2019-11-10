@@ -1,11 +1,11 @@
 #include <algorithm>
 #include <array>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <random>
 #include <string>
-#include <tuple>
 #include <unordered_set>
 #include <variant>
 #include <vector>
@@ -20,10 +20,10 @@ using XType = vector<RowType>;
 using yType = vector<pair<int, int>>;
 using XyType = vector<pair<RowType, int>>;
 
-XType read_X() {
+XType read_X(string file_name = "X_train.csv") {
     csv::CSVFormat format;
     format.trim({' ', '\t'});
-    csv::CSVReader reader("X_train.csv", format);
+    csv::CSVReader reader(file_name, format);
     XType data;
     for (csv::CSVRow& row : reader) {
         data.emplace_back(RowType{
@@ -36,10 +36,10 @@ XType read_X() {
     return data;
 }
 
-yType read_y() {
+yType read_y(string file_name = "y_train.csv") {
     csv::CSVFormat format;
     format.trim({' ', '\t'});
-    csv::CSVReader reader("y_train.csv", format);
+    csv::CSVReader reader(file_name, format);
     yType data;
     for (csv::CSVRow& row : reader) {
         data.emplace_back(make_pair(row[0].get<int>(), row[1].get<int>()));
@@ -169,7 +169,7 @@ class DecisionTree {
     static unique_ptr<Node> build_tree(const XyType& Xy) {
         const auto [gain, question] = find_best(Xy);
 
-        if (gain == 0) {
+        if (gain <= 0.01) {
             const auto cnt = count_labels(Xy);
             int max_lb = -1, max_lb_cnt = -1;
             for (auto const& [key, val] : cnt) {
@@ -203,28 +203,91 @@ class DecisionTree {
     int predict(const RowType& r) const { return _predict(r, root); }
 };
 
-int main() {
-    cout << "Preprocessing" << endl;
+class RandomForest {
+   private:
+    vector<DecisionTree> trees;
+
+   public:
+    RandomForest(XyType Xy, int tree_cnt) {
+        std::random_device rd;
+        std::mt19937 g(rd());
+        for (int i = 0; i < tree_cnt; i++) {
+            shuffle(Xy.begin(), Xy.end(), g);
+            XyType train_set(Xy.begin(), Xy.begin() + Xy.size() / 2);
+            trees.push_back(DecisionTree(train_set));
+        }
+    }
+    int predict(const RowType& r) const {
+        unordered_map<int, int> um;
+        int max_lb = -1, max_lb_cnt = -1;
+        for (const auto& t : trees) {
+            const auto ans = t.predict(r);
+            um[ans]++;
+            if (um[ans] > max_lb_cnt) {
+                max_lb = ans;
+            }
+        }
+        return max_lb;
+    }
+};
+
+void kaggle() {
     const auto X = read_X();
     const auto y = read_y();
     auto Xy = mergeXy(X, y);
     shuffle(Xy.begin(), Xy.end(), mt19937(random_device()()));
-    const auto train_size = Xy.size() / 10 * 7;
-    const XyType train_set(Xy.begin(), Xy.begin() + train_size);
-    const XyType test_set(Xy.begin() + train_size, Xy.end());
+    const auto tree = DecisionTree(Xy);
 
-    cout << "Training" << endl;
-    const auto tree = DecisionTree(train_set);
-    int yeah = 0, cnt = 0;
-    cout << "Predicting" << endl;
-
-    for (const auto& i : test_set) {
-        const auto r = tree.predict(i.first);
-        cnt++;
-        if (r == i.second) {
-            yeah++;
-        }
+    const auto testX = read_X("X_test.csv");
+    ofstream ofs("y_test.csv");
+    auto writer = csv::make_csv_writer(ofs);
+    int idx = 22792;
+    writer << vector<string>{"Id", "Category"};
+    for (const auto& i : testX) {
+        const auto r = tree.predict(i);
+        writer << vector<string>{to_string(idx), to_string(r)};
+        idx++;
     }
-    cout << yeah << endl << cnt << endl;
-    cout << static_cast<double>(yeah) / cnt << endl;
+}
+
+int main() {
+    kaggle();
+    // cout << "Preprocessing" << endl;
+    // const auto X = read_X();
+    // const auto y = read_y();
+    // auto Xy = mergeXy(X, y);
+    // shuffle(Xy.begin(), Xy.end(), mt19937(random_device()()));
+    // const auto train_size = Xy.size() / 10 * 7;
+    // const XyType train_set(Xy.begin(), Xy.begin() + train_size);
+    // const XyType test_set(Xy.begin() + train_size, Xy.end());
+
+    // cout << "Training" << endl;
+    // const auto tree = DecisionTree(train_set);
+    // int yeah = 0, cnt = 0;
+    // cout << "Predicting" << endl;
+
+    // for (const auto& i : test_set) {
+    //     const auto r = tree.predict(i.first);
+    //     cnt++;
+    //     if (r == i.second) {
+    //         yeah++;
+    //     }
+    // }
+    // cout << yeah << endl << cnt << endl;
+    // cout << static_cast<double>(yeah) / cnt << endl;
+
+    // cout << "Training" << endl;
+    // const auto forest = RandomForest(train_set, 5);
+    // yeah = 0, cnt = 0;
+    // cout << "Predicting" << endl;
+
+    // for (const auto& i : test_set) {
+    //     const auto r = forest.predict(i.first);
+    //     cnt++;
+    //     if (r == i.second) {
+    //         yeah++;
+    //     }
+    // }
+    // cout << yeah << endl << cnt << endl;
+    // cout << static_cast<double>(yeah) / cnt << endl;
 }
