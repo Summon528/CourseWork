@@ -14,6 +14,7 @@
 using namespace std;
 
 constexpr int NCOL = 14;
+constexpr unsigned long long RAND_SEED = 0611262611262;
 using CellType = variant<int, string>;
 using RowType = array<CellType, NCOL>;
 using XType = vector<RowType>;
@@ -130,11 +131,11 @@ class DecisionTree {
 
     static pair<XyType, XyType> split(const XyType& Xy, const Question& q) {
         XyType left, right;
-        for (unsigned int i = 0; i < Xy.size(); i++) {
-            if (q.match(Xy[i].first)) {
-                right.emplace_back(Xy[i]);
+        for (const auto& i : Xy) {
+            if (q.match(i.first)) {
+                right.emplace_back(i);
             } else {
-                left.emplace_back(Xy[i]);
+                left.emplace_back(i);
             }
         }
         return {left, right};
@@ -148,7 +149,20 @@ class DecisionTree {
         for (int i = 0; i < NCOL; i++) {
             set<CellType> values;
             for (const auto& j : Xy) values.insert(j.first[i]);
-            vector<CellType> values_vector(values.begin(), values.end());
+
+            vector<CellType> values_vector;
+            if (Xy[0].first[i].index() == 0 && values.size() > 100) {
+                int min_val = get<int>(*values.begin());
+                int max_val = get<int>(*values.rbegin());
+                int step = (max_val - min_val) / 100;
+                for (int j = min_val; j < max_val; j += step) {
+                    values_vector.emplace_back(j);
+                }
+                values_vector.emplace_back(max_val);
+            } else {
+                copy(values.begin(), values.end(),
+                     back_inserter(values_vector));
+            }
 
 #pragma omp parallel for
             for (unsigned int j = 0; j < values_vector.size(); j++) {
@@ -209,11 +223,10 @@ class RandomForest {
 
    public:
     RandomForest(XyType Xy, int tree_cnt) {
-        std::random_device rd;
-        std::mt19937 g(rd());
+        std::mt19937 g(RAND_SEED);
         for (int i = 0; i < tree_cnt; i++) {
             shuffle(Xy.begin(), Xy.end(), g);
-            XyType train_set(Xy.begin(), Xy.begin() + Xy.size() / 2);
+            XyType train_set(Xy.begin(), Xy.begin() + (Xy.size() / 5 * 4));
             trees.push_back(DecisionTree(train_set));
         }
     }
@@ -235,7 +248,7 @@ void kaggle() {
     const auto X = read_X();
     const auto y = read_y();
     auto Xy = mergeXy(X, y);
-    shuffle(Xy.begin(), Xy.end(), mt19937(random_device()()));
+    shuffle(Xy.begin(), Xy.end(), mt19937(RAND_SEED));
     const auto tree = DecisionTree(Xy);
 
     const auto testX = read_X("X_test.csv");
@@ -250,44 +263,83 @@ void kaggle() {
     }
 }
 
+void print_matrix(array<array<int, 2>, 2>& matrix) {
+    cout << "\tPred 0\tPred 1" << endl;
+    for (int i = 0; i < 2; i++) {
+        cout << "Act " << i << "\t" << matrix[i][0] << "\t" << matrix[i][1]
+             << endl;
+    }
+}
+
+void hold_out(const XyType& Xy) {
+    const auto train_size = Xy.size() / 10 * 7;
+    const XyType train_set(Xy.begin(), Xy.begin() + train_size);
+    const XyType test_set(Xy.begin() + train_size, Xy.end());
+    const auto tree = DecisionTree(train_set);
+    const auto forest = RandomForest(train_set, 3);
+
+    array<array<int, 2>, 2> matrix1 = {}, matrix2 = {};
+    int ac1 = 0, ac2 = 0;
+    for (const auto& i : test_set) {
+        const auto r1 = tree.predict(i.first);
+        const auto r2 = forest.predict(i.first);
+        matrix1[i.second][r1]++;
+        matrix2[i.second][r2]++;
+        if (i.second == r1) ac1++;
+        if (i.second == r2) ac2++;
+    }
+    cout << "Hold out - DecisionTree" << endl;
+    print_matrix(matrix1);
+    cout << "Accuracy: " << static_cast<double>(ac1) / test_set.size() << endl
+         << endl;
+
+    cout << "Hold out - RandomForest" << endl;
+    print_matrix(matrix2);
+    cout << "Accuracy: " << static_cast<double>(ac2) / test_set.size() << endl
+         << endl;
+}
+
+void k_fold(const XyType& Xy, int fold) {
+    array<array<int, 2>, 2> matrix1 = {}, matrix2 = {};
+    int ac1 = 0, ac2 = 0, total_test = 0;
+    for (int i = 0; i < fold; i++) {
+        XyType train_set, test_set;
+        for (unsigned int j = 0; j < Xy.size(); j++) {
+            if (j % fold == 0) {
+                test_set.emplace_back(Xy[j]);
+            } else {
+                train_set.emplace_back(Xy[j]);
+            }
+        }
+        total_test += test_set.size();
+        const auto tree = DecisionTree(train_set);
+        const auto forest = RandomForest(train_set, 3);
+        for (const auto& i : test_set) {
+            const auto r1 = tree.predict(i.first);
+            const auto r2 = forest.predict(i.first);
+            matrix1[i.second][r1]++;
+            matrix2[i.second][r2]++;
+            if (i.second == r1) ac1++;
+            if (i.second == r2) ac2++;
+        }
+    }
+    cout << "K-fold - DecisionTree" << endl;
+    print_matrix(matrix1);
+    cout << "Accuracy: " << static_cast<double>(ac1) / total_test << endl
+         << endl;
+
+    cout << "K-fold - RandomForest" << endl;
+    print_matrix(matrix2);
+    cout << "Accuracy: " << static_cast<double>(ac2) / total_test << endl
+         << endl;
+}
+
 int main() {
-    kaggle();
-    // cout << "Preprocessing" << endl;
-    // const auto X = read_X();
-    // const auto y = read_y();
-    // auto Xy = mergeXy(X, y);
-    // shuffle(Xy.begin(), Xy.end(), mt19937(random_device()()));
-    // const auto train_size = Xy.size() / 10 * 7;
-    // const XyType train_set(Xy.begin(), Xy.begin() + train_size);
-    // const XyType test_set(Xy.begin() + train_size, Xy.end());
-
-    // cout << "Training" << endl;
-    // const auto tree = DecisionTree(train_set);
-    // int yeah = 0, cnt = 0;
-    // cout << "Predicting" << endl;
-
-    // for (const auto& i : test_set) {
-    //     const auto r = tree.predict(i.first);
-    //     cnt++;
-    //     if (r == i.second) {
-    //         yeah++;
-    //     }
-    // }
-    // cout << yeah << endl << cnt << endl;
-    // cout << static_cast<double>(yeah) / cnt << endl;
-
-    // cout << "Training" << endl;
-    // const auto forest = RandomForest(train_set, 5);
-    // yeah = 0, cnt = 0;
-    // cout << "Predicting" << endl;
-
-    // for (const auto& i : test_set) {
-    //     const auto r = forest.predict(i.first);
-    //     cnt++;
-    //     if (r == i.second) {
-    //         yeah++;
-    //     }
-    // }
-    // cout << yeah << endl << cnt << endl;
-    // cout << static_cast<double>(yeah) / cnt << endl;
+    // kaggle();
+    const auto X = read_X();
+    const auto y = read_y();
+    auto Xy = mergeXy(X, y);
+    shuffle(Xy.begin(), Xy.end(), mt19937(RAND_SEED));
+    hold_out(Xy);
+    k_fold(Xy, 3);
 }
