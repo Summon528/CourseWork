@@ -202,6 +202,9 @@ class DecisionTree {
             }
         }
 
+        // skip this question if any side has size of zero
+        if (right_size == 0 || left_size == 0) return -1;
+
         // cacluate gain
         const auto left_gini = calc_gini(cnt_left);
         const auto right_gini = calc_gini(cnt_right);
@@ -416,6 +419,16 @@ void print_matrix(array<array<int, 2>, 2>& matrix) {
         cout << "Act " << i << "\t" << matrix[i][0] << "\t" << matrix[i][1]
              << endl;
     }
+    int size = matrix[0][0] + matrix[0][1] + matrix[1][0] + matrix[1][1];
+    cout << "Accuracy: "
+         << static_cast<double>(matrix[1][1] + matrix[0][0]) / size << endl
+         << "Recall: "
+         << static_cast<double>(matrix[1][1]) / (matrix[1][1] + matrix[1][0])
+         << endl
+         << "Precision: "
+         << static_cast<double>(matrix[1][1]) / (matrix[1][1] + matrix[0][1])
+         << endl
+         << endl;
 }
 
 void hold_out(const XyType& Xy) {
@@ -437,13 +450,9 @@ void hold_out(const XyType& Xy) {
     }
     cout << "Hold out - DecisionTree" << endl;
     print_matrix(matrix1);
-    cout << "Accuracy: " << static_cast<double>(ac1) / test_set.size() << endl
-         << endl;
 
     cout << "Hold out - RandomForest" << endl;
     print_matrix(matrix2);
-    cout << "Accuracy: " << static_cast<double>(ac2) / test_set.size() << endl
-         << endl;
 }
 
 void k_fold(const XyType& Xy, int fold) {
@@ -452,7 +461,7 @@ void k_fold(const XyType& Xy, int fold) {
     for (int i = 0; i < fold; i++) {
         XyType train_set, test_set;
         for (unsigned int j = 0; j < Xy.size(); j++) {
-            if (j % fold == 0) {
+            if (j % fold == i) {
                 test_set.emplace_back(Xy[j]);
             } else {
                 train_set.emplace_back(Xy[j]);
@@ -472,13 +481,9 @@ void k_fold(const XyType& Xy, int fold) {
     }
     cout << "K-fold - DecisionTree" << endl;
     print_matrix(matrix1);
-    cout << "Accuracy: " << static_cast<double>(ac1) / total_test << endl
-         << endl;
 
     cout << "K-fold - RandomForest" << endl;
     print_matrix(matrix2);
-    cout << "Accuracy: " << static_cast<double>(ac2) / total_test << endl
-         << endl;
 }
 
 void describe_predict(const XyType& Xy, int cnt) {
