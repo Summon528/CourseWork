@@ -148,7 +148,6 @@ int main(int argc, char *argv[])
   //      Shift the col index vals from actual (firstcol --> lastcol ) 
   //      to local, i.e., (0 --> lastcol-firstcol)
   //---------------------------------------------------------------------
-  #pragma omp parallel for private(j,k) schedule(guided, 32)
   for (j = 0; j < lastrow - firstrow + 1; j++) {
     for (k = rowstr[j]; k < rowstr[j+1]; k++) {
       colidx[k] = colidx[k] - firstcol;
@@ -158,7 +157,6 @@ int main(int argc, char *argv[])
   //---------------------------------------------------------------------
   // set starting vector to (1, 1, .... 1)
   //---------------------------------------------------------------------
-  #pragma omp parallel for private(i) schedule(guided, 32)
   for (i = 0; i < NA+1; i++) {
     x[i] = 1.0;
   }
@@ -195,7 +193,6 @@ int main(int argc, char *argv[])
     //---------------------------------------------------------------------
     norm_temp1 = 0.0;
     norm_temp2 = 0.0;
-    #pragma omp parallel for private(j) reduction(+:norm_temp1,norm_temp2)  schedule(guided, 32)
     for (j = 0; j < cols; j++) {
       norm_temp1 = norm_temp1 + x[j] * z[j];
       norm_temp2 = norm_temp2 + z[j] * z[j];
@@ -206,7 +203,6 @@ int main(int argc, char *argv[])
     //---------------------------------------------------------------------
     // Normalize z to obtain x
     //---------------------------------------------------------------------
-    #pragma omp parallel for private(j) schedule(guided, 32)
     for (j = 0; j < cols; j++) {     
       x[j] = norm_temp2 * z[j];
     }
@@ -216,7 +212,6 @@ int main(int argc, char *argv[])
   //---------------------------------------------------------------------
   // set starting vector to (1, 1, .... 1)
   //---------------------------------------------------------------------
-  #pragma omp parallel for private(i) schedule(static)
   for (i = 0; i < NA+1; i++) {
     x[i] = 1.0;
   }
@@ -250,7 +245,6 @@ int main(int argc, char *argv[])
     //---------------------------------------------------------------------
     norm_temp1 = 0.0;
     norm_temp2 = 0.0;
-    #pragma omp parallel for private(j) reduction(+:norm_temp1,norm_temp2)
     for (j = 0; j < cols; j++) {
       norm_temp1 = norm_temp1 + x[j]*z[j];
       norm_temp2 = norm_temp2 + z[j]*z[j];
@@ -266,7 +260,6 @@ int main(int argc, char *argv[])
     //---------------------------------------------------------------------
     // Normalize z to obtain x
     //---------------------------------------------------------------------
-    #pragma omp parallel for private(j) schedule (static)
     for (j = 0; j < cols; j++) {
       x[j] = norm_temp2 * z[j];
     }
@@ -325,12 +318,15 @@ static void conj_grad(int colidx[],
   //---------------------------------------------------------------------
   // Initialize the CG algorithm:
   //---------------------------------------------------------------------
-  #pragma omp parallel for private(j) schedule(guided, 32)
-  for (j = 0; j < naa+1; j++) {
-    q[j] = 0.0;
-    z[j] = 0.0;
-    p[j] = r[j] = x[j];
-  }
+  #pragma task
+  memcpy(r, x, sizeof(double) * (naa+1));
+  #pragma task
+  memcpy(p, x, sizeof(double) * (naa+1));
+  #pragma task
+  memset(q, 0, sizeof(double) * (naa+1));
+  #pragma task
+  memset(z, 0, sizeof(double) * (naa+1));
+  #pragma taskwait
 
   //---------------------------------------------------------------------
   // rho = r.r
@@ -423,7 +419,6 @@ static void conj_grad(int colidx[],
   // First, form A.z
   // The partition submatrix-vector multiply
   //---------------------------------------------------------------------
-  memcpy(r, q, sizeof(double) * lastcol-firstcol+1);
   sum = 0.0;
   
   //---------------------------------------------------------------------
@@ -431,7 +426,7 @@ static void conj_grad(int colidx[],
   //---------------------------------------------------------------------
   #pragma omp parallel for private(j,d) reduction(+:sum) schedule(guided, 32)
   for (j = 0; j < lastcol-firstcol+1; j++) {
-    d   = x[j] - r[j];
+    d   = x[j] - q[j];
     sum = sum + d*d;
   }
 
@@ -556,12 +551,10 @@ static void sparse(double a[],
   //---------------------------------------------------------------------
   // ...count the number of triples in each row
   //---------------------------------------------------------------------
-  #pragma omp parallel for private(j) schedule(guided, 32)
   for (j = 0; j < nrows+1; j++) {
     rowstr[j] = 0;
   }
 
-  #pragma opm parallel for private(i,j,nza) schedule(guided, 32)
   for (i = 0; i < n; i++) {
     for (nza = 0; nza < arow[i]; nza++) {
       j = acol[i][nza] + 1;
