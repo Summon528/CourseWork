@@ -27,6 +27,7 @@ int get_L(int L, int rank, int size) {
 
 void *calc(void *data) {
     args_t *args = (args_t *)data;
+    int balance = 1;
     int *temp = args->temp;
     int *next = args->next;
     float d = args->d;
@@ -41,10 +42,11 @@ void *calc(void *data) {
             t *= d;
             next[i * W + j] = t;
             if (next[i * W + j] != temp[i * W + j]) {
-                args->balance = 0;
+                balance = 0;
             }
         }
     }
+    args->balance = balance;
 }
 
 int run(int LL, int iteration, int *temp, float d, int *result_it) {
@@ -55,71 +57,86 @@ int run(int LL, int iteration, int *temp, float d, int *result_it) {
     int it;
     int prev_rank = rank - 1 < 0 ? -1 : rank - 1;
     int next_rank = rank + 1 >= size ? -1 : rank + 1;
-    MPI_Request req[2];
+    int balance = 1;
+    MPI_Request req_s[2], req_r[2], req_b[size];
+    int local_size = 1;
+    char *local_size_str = getenv("OMPI_COMM_WORLD_LOCAL_SIZE");
+    if (local_size_str != NULL) {
+        sscanf(local_size_str, "%d", &local_size);
+    }
+
+    int nthreads = (get_nprocs() + local_size - 1) / local_size;
+    pthread_t threads[nthreads];
+    args_t args[nthreads];
 
     for (it = 0; it < iteration; it++) {
         if (it != 0) {
-            int balance = 1, tmp_balance;
+            int tmp_balance;
+
+            for (int i = 0; i < size; i++) {
+                if (i == rank) continue;
+                MPI_Isend(&balance, 1, MPI_INT, i, 4, MPI_COMM_WORLD,
+                          &req_b[i]);
+            }
+
             for (int i = 0; i < size; i++) {
                 if (i == rank) continue;
                 MPI_Recv(&tmp_balance, 1, MPI_INT, i, 4, MPI_COMM_WORLD,
                          MPI_STATUS_IGNORE);
                 if (tmp_balance == 0) balance = 0;
             }
+
+            for (int i = 0; i < size; i++) {
+                if (i == rank) continue;
+                MPI_Wait(&req_b[i], MPI_STATUS_IGNORE);
+            }
             if (balance) break;
 
             if (prev_rank == -1) {
                 memcpy(temp, temp + W, W * sizeof(int));
             } else {
+                MPI_Isend(temp + W, W, MPI_INT, prev_rank, 2, MPI_COMM_WORLD,
+                          &req_s[0]);
                 MPI_Irecv(temp, W, MPI_INT, prev_rank, 2, MPI_COMM_WORLD,
-                          &req[0]);
+                          &req_r[0]);
             }
             if (next_rank == -1) {
                 memcpy(temp + (LL + 1) * W, temp + LL * W, W * sizeof(int));
             } else {
+                MPI_Isend(temp + LL * W, W, MPI_INT, next_rank, 2,
+                          MPI_COMM_WORLD, &req_s[1]);
                 MPI_Irecv(temp + (LL + 1) * W, W, MPI_INT, next_rank, 2,
-                          MPI_COMM_WORLD, &req[1]);
+                          MPI_COMM_WORLD, &req_r[1]);
             }
-            if (prev_rank != -1) MPI_Wait(&req[0], MPI_STATUS_IGNORE);
-            if (next_rank != -1) MPI_Wait(&req[1], MPI_STATUS_IGNORE);
+            if (prev_rank != -1) {
+                MPI_Wait(&req_s[0], MPI_STATUS_IGNORE);
+                MPI_Wait(&req_r[0], MPI_STATUS_IGNORE);
+            }
+            if (next_rank != -1) {
+                MPI_Wait(&req_s[1], MPI_STATUS_IGNORE);
+                MPI_Wait(&req_r[1], MPI_STATUS_IGNORE);
+            }
         }
 
-        int nprocs = get_nprocs();
-        pthread_t threads[nprocs];
-        args_t *args[nprocs];
-        int LLL = LL / nprocs;
-        for (int i = 0; i < nprocs; i++) {
-            args[i] = malloc(sizeof(args_t));
-            args[i]->temp = temp;
-            args[i]->next = next;
-            args[i]->d = d;
-            args[i]->st = 1 + LLL * i;
-            args[i]->ed = args[i]->st + LLL;
-            args[i]->balance = 1;
-            if (i == nprocs - 1) {
-                args[i]->ed = args[i]->ed + LL % nprocs;
+        int LLL = LL / nthreads;
+        for (int i = 0; i < nthreads; i++) {
+            args[i].temp = temp;
+            args[i].next = next;
+            args[i].d = d;
+            args[i].st = 1 + LLL * i;
+            args[i].ed = args[i].st + LLL;
+            args[i].balance = 1;
+            if (i == nthreads - 1) {
+                args[i].ed = args[i].ed + LL % nthreads;
             }
-            pthread_create(&threads[i], NULL, calc, args[i]);
+            pthread_create(&threads[i], NULL, calc, &args[i]);
         }
 
-        int balance = 1;
+        balance = 1;
         void *tmp_balance;
-        for (int i = 0; i < nprocs; i++) {
+        for (int i = 0; i < nthreads; i++) {
             pthread_join(threads[i], NULL);
-            if (args[i]->balance == 0) balance = 0;
-        }
-
-        for (int i = 0; i < size; i++) {
-            if (i != rank) {
-                MPI_Send(&balance, 1, MPI_INT, i, 4, MPI_COMM_WORLD);
-            }
-        }
-
-        if (prev_rank != -1) {
-            MPI_Send(next + W, W, MPI_INT, prev_rank, 2, MPI_COMM_WORLD);
-        }
-        if (next_rank != -1) {
-            MPI_Send(next + LL * W, W, MPI_INT, next_rank, 2, MPI_COMM_WORLD);
+            if (args[i].balance == 0) balance = 0;
         }
 
         int *tmp = temp;
