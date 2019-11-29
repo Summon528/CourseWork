@@ -133,7 +133,6 @@ int run(int LL, int iteration, int *temp, float d, int *result_it) {
         }
 
         balance = 1;
-        void *tmp_balance;
         for (int i = 0; i < nthreads; i++) {
             pthread_join(threads[i], NULL);
             if (args[i].balance == 0) balance = 0;
@@ -162,6 +161,49 @@ int run(int LL, int iteration, int *temp, float d, int *result_it) {
     return min;
 }
 
+int serialize(int L, int iteration, int *temp, float d) {
+    int *next = malloc((L + 2) * W * sizeof(int));  // Next time step
+
+    int count = 0, balance = 0;
+    while (iteration--) {  // Compute with up, left, right, down points
+        balance = 1;
+        count++;
+        for (int i = 1; i <= L; i++) {
+            for (int j = 0; j < W; j++) {
+                float t = temp[i * W + j] / d;
+                t += temp[i * W + j] * -4;
+                t += temp[(i - 1) * W + j];
+                t += temp[(i + 1) * W + j];
+                t += temp[i * W + (j - 1 < 0 ? 0 : j - 1)];
+                t += temp[i * W + (j + 1 >= W ? j : j + 1)];
+                t *= d;
+                next[i * W + j] = t;
+                if (next[i * W + j] != temp[i * W + j]) {
+                    balance = 0;
+                }
+            }
+        }
+        if (balance) {
+            break;
+        }
+        memcpy(next, next + W, W * sizeof(int));
+        memcpy(next + (L + 1) * W, next + L * W, W * sizeof(int));
+        int *tmp = temp;
+        temp = next;
+        next = tmp;
+    }
+    int min = temp[W];
+    for (int i = 1; i <= L; i++) {
+        for (int j = 0; j < W; j++) {
+            if (temp[i * W + j] < min) {
+                min = temp[i * W + j];
+            }
+        }
+    }
+    printf("Size: %d*%d, Iteration: %d, Min Temp: %d\n", L, W, count, min);
+    return 0;
+}
+
 int main(int argc, char **argv) {
     int rank, size;
     MPI_Init(&argc, &argv);
@@ -186,6 +228,11 @@ int main(int argc, char **argv) {
         memcpy(temp, temp + W, W * sizeof(int));
         memcpy(temp + (L + 1) * W, temp + L * W, W * sizeof(int));
 
+        if (L < size) {
+            serialize(L, iteration, temp, d);
+            goto exit;
+        }
+
         int part = L / size * W;
         for (int i = 1; i < size; i++) {
             int send_chunck = (get_L(L, i, size) + 2) * W;
@@ -209,10 +256,12 @@ int main(int argc, char **argv) {
         int recv_chunk = (LL + 2) * W;
         int *temp = (int *)malloc((LL + 2) * W * sizeof(int));
         MPI_Recv(&d, 1, MPI_FLOAT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        if (L < size) goto exit;
         MPI_Recv(temp, (LL + 2) * W, MPI_INT, 0, 0, MPI_COMM_WORLD,
                  MPI_STATUS_IGNORE);
         run(LL, iteration, temp, d, NULL);
     }
+exit:
     MPI_Finalize();
     return 0;
 }
