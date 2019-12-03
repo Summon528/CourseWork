@@ -6,11 +6,10 @@ import numpy as np
 def main():
     # Data Input
     n = int(input("Polynomial bases? "))
-    m = n * 2 - 1
     df = pd.read_csv("data/linear_data.txt", header=None)
 
     # Create Matrix
-    xsum = pd.Series([(df[0] ** i).sum() for i in range(m)])
+    xsum = pd.Series([(df[0] ** i).sum() for i in range(n * 2 - 1)])
     y = pd.Series([(df[0] ** i * df[1]).sum() for i in range(n)])
     matrix = []
     for i in range(n):

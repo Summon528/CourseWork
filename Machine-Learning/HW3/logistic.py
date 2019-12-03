@@ -3,7 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 
-LR = 0.02
+LR = 0.02  # Learning rate
+SEED = 0x611262  # Random Seed
 
 
 def main():
@@ -19,17 +20,18 @@ def main():
     label = pd.Series([0] * len(df1) + [1] * len(df2))
 
     # Gradient Descent
+    np.random.seed(SEED)
     w = np.random.random_sample((df.shape[1],))
-    data = df.values
     sigmoid = lambda x, w: 1 / (1 + np.exp(-np.dot(x, w)))
+    data = df.values
     for _ in range(5000):
         pred = sigmoid(data, w)
         if method == 0:
-            loss = (label - pred) * pred * (1 - pred)
+            loss = (label - pred) * pred * (1 - pred)  # L2 Loss Function
         else:
-            loss = -(pred - label) / len(label)
-        grad = np.dot(data.T, loss)
-        w += grad * LR
+            loss = -(pred - label) / len(label)  # Cross-Entrophy Loss Function
+        grad = np.dot(data.T, loss)  # Found out what the gradient is
+        w += grad * LR  # Update weight
 
     # Plot Ground Truth
     label_color = label.map({0: "tab:blue", 1: "tab:orange"})
@@ -51,7 +53,8 @@ def main():
                 columns=["Predicted: 0", "Predicted: 1"],
                 index=["Actual: 0", "Actual: 1"],
             ),
-            tablefmt="pipe", headers="keys"
+            tablefmt="pipe",
+            headers="keys",
         )
     )
     print("")
