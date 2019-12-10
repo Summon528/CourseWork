@@ -57,7 +57,7 @@ void work(float *values, int nsteps, int tpoints) {
         if (idx == 1 || idx == tpoints) {
             newvalt = 0.0f;
         } else {
-            newvalt = (1.82f * valt) - oldvalt;
+            newvalt = 2.0f * valt - oldvalt - 0.18f * valt;
         }
         oldvalt = valt;
         valt = newvalt;
