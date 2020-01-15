@@ -108,7 +108,7 @@ Experience Replay is a common optimization technique in DQN. As mentioned in the
 
 
 \subsection{Prioritized Experience Replay}
-Prioritized experience replay based on the concept of experience replay with some slighly modifications. Instead of randomly sampling, prioritized experience replay using the prioirty of datas when sampling. If the TD-error of data is higher, which means that the precision of prediction has more potentials to be learned, the prioirty of those data will be higher. The advantage of using prioritized experience replay is that for the small amounts of data with potential to be learned, prioritized experience replay has higher chance to sample those data.
+Prioritized experience replay is based on the concept of experience replay with some slight modifications. Instead of randomly sampling, prioritized experience replay uses the priority of data when sampling. If the TD-error of data is higher, the precision of prediction has more potentials to be learned, so the priority of those data will be higher. The advantage of using prioritized experience replay is that for small amounts of data with high learning potential, prioritized experience replay has a higher chance to sample those data.
 
 
 \subsection*{}
@@ -120,7 +120,7 @@ Extracting information through screenshots requires a series of complicated task
 To achieve our goal, which is speeding up experience generation, we decide to optimize the training process through the following three aspects, parallelize image processing, parallelize matrix calculation and modify the structure of the model.
 
 \subsection{Environment}
-We will first do a brief summary of our custom-made environment. Since the game is not written by us, we must first build an environment to capture game data in order to extract useful informations to the model for training. To accomplish this, we have to hack the game a bit.
+We will first do a brief summary of our custom-made environment. Since the game is not written by us, we must first build an environment to capture game data in order to extract useful information to the model for training. To accomplish this, we have to hack the game a bit.
 \begin{itemize}
   \item Due to the use of TD update, whether a game is over or not could be taken out of consideration. The model can learn and update the parameters after every action. Thus, we use a piece of software called Cheat Engine to reverse engineer the game, found the instruction that causes the game score to increase and change it to a nop instruction. This way, the game will be more stable to provide continuous training.
   \item To locate the position of Pikachus and the ball, we modify the images of Pikachu and the ball by adding special color dots on them using another piece of program. This dramatically decreases the complexity to design and implement the environment.
@@ -179,7 +179,7 @@ The architecture proposed in Paper separates the actor and the learner into diff
 \subsection*{Optimization\#3 - Multiple Actors}
 One clear advantage of this architecture is that it enables us to run multiple actors at the same time and interact with different environments to increase the speed of experiences generation.
 
-But since we extract informations through screen capture, three major problems immediately arise. Firstly, the screen is simply not big enough to fit multiple actors. Secondly, additional adjustments are needed because different actors will locate in various positions of the screen. Lastly, the computer cannot be operated due to the use of screen capture.
+But since we extract information through screen capture, three major problems immediately arise. Firstly, the screen is simply not big enough to fit multiple actors. Secondly, additional adjustments are needed because different actors will locate in various positions of the screen. Lastly, the computer cannot be operated due to the use of screen capture.
 
 We introduced X Virtual Frame Buffer (XVFB) to solve this problem. Each XVFB is essentially a virtual monitor where users can launch different processes. We create sperate actors in different XVFB so that they will not interfere with each other. However, due to process separation, we use Python's Pipe to help communicate between the actor and the environment. The final architecture of the environment is illustrated as the following
 \begin{figure}[h]
@@ -189,7 +189,7 @@ We introduced X Virtual Frame Buffer (XVFB) to solve this problem. Each XVFB is 
 \end{figure}
 
 \section{Experimental Methodology}
-To test wheater our purposed solution generates more experiences or not, we place a counter in actor's buffer. We then launch the game, start the agent and count how much experiences are generated within 5 seconds in different actor and sum them up. We do the same procedure 10 times in every benchmark to eliminate outliers.
+To test wheater our purposed solution generates more experiences or not, we place a counter in the actor's buffer. We then launch the game, start the agent, count how much experiences are generated within 5 seconds in different actor and sum them up. We do the same procedure 10 times in every benchmark to eliminate outliers.
 
 \section{Experimental Results}
 All test and benchmark are run under a laptop with the following specification
