@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <dirent.h>
 #include <getopt.h>
+#include <libgen.h>
 #include <netinet/in.h>
 #include <regex.h>
 #include <sys/stat.h>
@@ -11,6 +12,7 @@
 #include <algorithm>
 #include <cassert>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -113,13 +115,17 @@ int main(int argc, char* argv[]) {
                 if (S_ISSOCK(linkstat.st_mode)) {
                     fstream cmdlinefs("/proc/" + d_name + "/cmdline",
                                       fstream::in);
-                    string cmdline;
-                    cmdlinefs >> cmdline;
-                    for (int i = 0; i < cmdline.length(); i++) {
-                        if (cmdline[i] == '\0') cmdline[i] = ' ';
+                    string token;
+                    getline(cmdlinefs, token, '\0');
+                    const auto slashpos = token.find_last_of('/');
+                    if (slashpos != string::npos) {
+                        token = token.substr(slashpos + 1);
                     }
 
-                    inode_map[linkstat.st_ino] = d_name + "/" + cmdline;
+                    stringstream result;
+                    result << token << ' ';
+                    while (getline(cmdlinefs, token, '\0')) result << token;
+                    inode_map[linkstat.st_ino] = d_name + "/" + result.str();
                 }
             }
             closedir(fddir);
@@ -136,7 +142,22 @@ int main(int argc, char* argv[]) {
         types = {"tcp", "tcp6"};
     }
 
+    bool firsttype = true;
     for (auto type : types) {
+        if (type == "tcp") {
+            puts("List of TCP connections:");
+            cout << left << setw(8) << "Proto" << setw(48) << "Local Address"
+                 << setw(48) << "Foreign Address"
+                 << "Program name and arguments" << endl;
+        } else if (type == "udp") {
+            if (!firsttype) puts("");
+            puts("List of UDP connections:");
+            cout << left << setw(8) << "Proto" << setw(48) << "Local Address"
+                 << setw(48) << "Foreign Address"
+                 << "Program name and arguments" << endl;
+        }
+
+        firsttype = false;
         fstream fs("/proc/net/" + type, fstream::in);
         string line;
         fs.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -164,8 +185,8 @@ int main(int argc, char* argv[]) {
 
             regmatch_t pmatch[1];
             if (regexec(&regex, cmdline.c_str(), 1, pmatch, 0) == 0) {
-                cout << type << '\t' << local << '\t' << rem << '\t' << cmdline
-                     << endl;
+                cout << left << setw(8) << type << setw(48) << local << setw(48)
+                     << rem << cmdline << endl;
             }
         }
     }
