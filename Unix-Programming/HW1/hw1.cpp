@@ -186,7 +186,10 @@ int main(int argc, char* argv[]) {
             if (target != inode_map.end()) cmdline = target->second;
 
             regmatch_t pmatch[1];
-            if (regexec(&regex, cmdline.c_str(), 1, pmatch, 0) == 0) {
+            if (regexec(&regex, type.c_str(), 1, pmatch, 0) == 0 ||
+                regexec(&regex, local.c_str(), 1, pmatch, 0) == 0 ||
+                regexec(&regex, rem.c_str(), 1, pmatch, 0) == 0 ||
+                regexec(&regex, cmdline.c_str(), 1, pmatch, 0) == 0) {
                 cout << left << setw(8) << type << setw(48) << local << setw(48)
                      << rem << cmdline << endl;
             }
