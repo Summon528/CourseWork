@@ -185,13 +185,13 @@ int main(int argc, char* argv[]) {
             const auto target = inode_map.find(inode);
             if (target != inode_map.end()) cmdline = target->second;
 
+            stringstream result_ss;
+            result_ss << left << setw(8) << type << setw(48) << local
+                      << setw(48) << rem << cmdline << endl;
+
             regmatch_t pmatch[1];
-            if (regexec(&regex, type.c_str(), 1, pmatch, 0) == 0 ||
-                regexec(&regex, local.c_str(), 1, pmatch, 0) == 0 ||
-                regexec(&regex, rem.c_str(), 1, pmatch, 0) == 0 ||
-                regexec(&regex, cmdline.c_str(), 1, pmatch, 0) == 0) {
-                cout << left << setw(8) << type << setw(48) << local << setw(48)
-                     << rem << cmdline << endl;
+            if (regexec(&regex, result_ss.str().c_str(), 1, pmatch, 0) == 0) {
+                cout << result_ss.str() << endl;
             }
         }
     }
