@@ -31,9 +31,9 @@ string convert_ip(string str, bool ipv6) {
 
     getline(ss, token, ':');
     if (!ipv6) {
-        uint64_t addr_num;
-        addr_num = stoull(token, nullptr, 16);
-        struct in_addr addr = {(uint32_t)addr_num};
+        uint32_t addr_num;
+        addr_num = stoul(token, nullptr, 16);
+        struct in_addr addr = {addr_num};
         inet_ntop(AF_INET, &addr, addr_str.data(), 64);
     } else {
         uint32_t addr_num[4];
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
     struct dirent* dinfo;
     if (dir) {
         while ((dinfo = readdir(dir)) != NULL) {
-            if (!dinfo->d_type == DT_DIR) continue;
+            if (dinfo->d_type != DT_DIR) continue;
             auto d_name = string(dinfo->d_name);
             if (any_of(d_name.begin(), d_name.end(),
                        [](char c) { return !isdigit(c); })) {
@@ -123,8 +123,10 @@ int main(int argc, char* argv[]) {
                     }
 
                     stringstream result;
-                    result << token << ' ';
-                    while (getline(cmdlinefs, token, '\0')) result << token;
+                    result << token;
+                    while (getline(cmdlinefs, token, '\0')) {
+                        result << ' ' << token;
+                    }
                     inode_map[linkstat.st_ino] = d_name + "/" + result.str();
                 }
             }
@@ -166,7 +168,7 @@ int main(int argc, char* argv[]) {
             stringstream ss(line);
             int col = 0;
             string local, rem;
-            uint64_t inode;
+            uint64_t inode = 0;
 
             while (ss >> token) {
                 if (col == 1) {
