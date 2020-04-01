@@ -16,6 +16,9 @@ unsigned short checksum(unsigned short *buff, int _16bitword) {
 }
 
 int main(int argc, char *argv[]) {
+    assert(argc >= 4);
+
+    int ret;
     unsigned char query[] =
         "\x53\xbe\x01\x20\x00\x01\x00\x00\x00\x00\x00\x01\x03\x61\x6d\x70"
         "\x03\x75\x72\x6c\x04\x6e\x63\x74\x75\x02\x6d\x65\x00\x00\x10\x00"
@@ -38,13 +41,15 @@ int main(int argc, char *argv[]) {
     iph->id = htons(11262);
     iph->ttl = 64;
     iph->protocol = 17;  // UDP
-    iph->saddr = inet_addr("172.21.148.169");
-    iph->daddr = inet_addr("8.8.8.8");
+    ret = inet_aton(argv[1], (struct in_addr *)&iph->saddr);
+    assert(ret != 0);
+    ret = inet_aton(argv[3], (struct in_addr *)&iph->daddr);
+    assert(ret != 0);
     total_len += sizeof(struct iphdr);
 
     // Construct UDP header
     struct udphdr *udph = (struct udphdr *)(sendbuff + sizeof(struct iphdr));
-    udph->source = htons(23451);
+    udph->source = htons(atoi(argv[2]));
     udph->dest = htons(53);
     udph->check = 0;
     total_len += sizeof(struct udphdr);
@@ -61,7 +66,8 @@ int main(int argc, char *argv[]) {
 
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
-    inet_pton(AF_INET, "8.8.8.8", &addr.sin_addr);
+    ret = inet_aton(argv[3], &addr.sin_addr);
+    assert(ret != 0);
 
     int sd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
     assert(sd != -1);
