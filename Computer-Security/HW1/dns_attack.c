@@ -72,7 +72,9 @@ int main(int argc, char *argv[]) {
     int sd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
     assert(sd != -1);
 
-    int send_len = sendto(sd, sendbuff, PACKET_SZ, 0, (struct sockaddr *)&addr,
-                          sizeof(addr));
-    assert(send_len >= 0);
+    for (int i = 0; i < 3; i++) {
+        int send_len = sendto(sd, sendbuff, PACKET_SZ, 0,
+                              (struct sockaddr *)&addr, sizeof(addr));
+        assert(send_len >= 0);
+    }
 }
