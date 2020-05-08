@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+OPTIND=1
+
+SAND_PATH=./sandbox.so
+export BASE_DIR=./
+
+while getopts "p:d:" opt; do
+    case "$opt" in
+    p)  SAND_PATH=$OPTARG
+        ;;
+    d)  export BASE_DIR=$OPTARG
+        ;;
+    *)  echo "usage: ./sandbox [-p sopath] [-d basedir] [--] cmd [cmd args ...]"
+        echo "        -p: set the path to sandbox.so, default = ./sandbox.so"
+        echo "        -d: the base directory that is allowed to access, default = ."
+        echo "        --: seperate the arguments for sandbox and for the executed command"
+        exit 1
+    esac
+done
+
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
+
+if [ -z "$1" ]; then
+    echo "no command given."
+else
+    LD_PRELOAD=$SAND_PATH "$@"
+fi
