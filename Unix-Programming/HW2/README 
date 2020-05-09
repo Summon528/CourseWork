@@ -1,0 +1,35 @@
+## Monitored Functions
+
+```
+__xstat
+__xstat64
+execl
+execlp
+execle
+execv
+execve
+execvp
+system
+chdir
+chmod
+chown
+creat
+creat64
+fopen
+fopen64
+mkdir
+opendir
+readlink
+remove
+rmdir
+symlink
+unlink
+rename
+link
+open
+open64
+openat
+openat64
+```
+
+Rejected call will return -1 or NULL and set errno = EACCES;

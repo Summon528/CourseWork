@@ -13,8 +13,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define IS_SLASH(s) (s == '/')
-
 char *path_canonicalize(const char *path_og, char *buf) {
     char path[PATH_MAX] = {};
     strncpy(path, path_og, PATH_MAX);
@@ -74,25 +72,33 @@ char *path_canonicalize(const char *path_og, char *buf) {
     return buf;
 }
 
-static char *basedir = "/";
+static char *basedir = NULL;
 static int ttyfd = -1;
 
+void opentty();
+
 void print_bad_fun(const char *fun, const char *exe) {
-    if (ttyfd == -1) return;
     char buf[256] = {};
     snprintf(buf, sizeof(buf), "[sandbox] %s(%s): not allowed\n", fun, exe);
+    if (ttyfd == -1) opentty();
     write(ttyfd, buf, sizeof(buf));
 }
 
 void print_bad_path(const char *fun, const char *path) {
-    if (ttyfd == -1) return;
     char buf[256] = {};
     snprintf(buf, sizeof(buf), "[sandbox] %s: access to %s is not allowed\n",
              fun, path);
+    if (ttyfd == -1) opentty();
     write(ttyfd, buf, sizeof(buf));
 }
 
 bool is_in_basedir(const char *path) {
+    if (basedir == NULL) {
+        basedir = getenv("BASE_DIR");
+        if (basedir == NULL) basedir = "./";
+        basedir = realpath(basedir, NULL);
+        assert(basedir != NULL);
+    }
     int basedir_len = strlen(basedir);
     int path_len = strlen(path);
     if (path_len < basedir_len) {
@@ -187,30 +193,37 @@ extern "C" {
 
 int execl(const char *pathname, const char *arg, ...) {
     print_bad_fun(__func__, pathname);
+    errno = EACCES;
     return -1;
 };
 int execlp(const char *file, const char *arg, ...) {
     print_bad_fun(__func__, file);
+    errno = EACCES;
     return -1;
 };
 int execle(const char *pathname, const char *arg, ...) {
     print_bad_fun(__func__, pathname);
+    errno = EACCES;
     return -1;
 };
 int execv(const char *pathname, char *const argv[]) {
     print_bad_fun(__func__, pathname);
+    errno = EACCES;
     return -1;
 };
 int execve(const char *pathname, char *const argv[], char *const envp[]) {
     print_bad_fun(__func__, pathname);
+    errno = EACCES;
     return -1;
 };
 int execvp(const char *file, char *const argv[]) {
     print_bad_fun(__func__, file);
+    errno = EACCES;
     return -1;
 };
 int system(const char *command) {
     print_bad_fun(__func__, command);
+    errno = EACCES;
     return -1;
 };
 
@@ -349,15 +362,11 @@ HOOK_OPENAT(openat64)
 }
 #endif
 
-__attribute__((constructor)) void init() {
+void opentty() {
     void *handle = dlopen("libc.so.6", RTLD_LAZY);
     assert(handle != NULL);
     old_open = dlsym(handle, "open");
     assert(old_open != NULL);
     ttyfd = old_open("/dev/tty", O_RDWR);
     assert(ttyfd >= 0);
-    basedir = getenv("BASE_DIR");
-    if (basedir == NULL) basedir = "./";
-    basedir = realpath(basedir, NULL);
-    assert(basedir != NULL);
 }
