@@ -97,13 +97,6 @@ void print_bad_path(const char *fun, const char *path) {
     write(ttyfd, buf, sizeof(buf));
 }
 
-void print_errno(const char *fun) {
-    if (ttyfd == -1) return;
-    char buf[256] = {};
-    snprintf(buf, sizeof(buf), "[sandbox] %s: %s\n", fun, strerror(errno));
-    write(ttyfd, buf, sizeof(buf));
-}
-
 bool is_in_basedir(const char *path) {
     int basedir_len = strlen(basedir);
     int path_len = strlen(path);
@@ -306,6 +299,10 @@ HOOK_OPEN(open64)
                                                                                \
         char mod_path[PATH_MAX] = {};                                          \
         if (dirfd != AT_FDCWD && pathname[0] == '.') {                         \
+            struct stat s;                                                     \
+            if (fstatat(dirfd, ".", &s, 0) == -1) {                            \
+                return -1;                                                     \
+            }                                                                  \
             char proc_path[PATH_MAX] = {};                                     \
             snprintf(proc_path, sizeof(proc_path), "/proc/self/fd/%d", dirfd); \
             if (old_readlink == NULL) {                                        \
@@ -315,7 +312,6 @@ HOOK_OPEN(open64)
                 assert(old_readlink != NULL);                                  \
             }                                                                  \
             if (old_readlink(proc_path, mod_path, sizeof(mod_path)) == -1) {   \
-                print_errno(__func__);                                         \
                 return -1;                                                     \
             }                                                                  \
             mod_path[strlen(mod_path)] = '/';                                  \
