@@ -15,68 +15,63 @@
 
 #define IS_SLASH(s) (s == '/')
 
-char *path_canonicalize(const char *path, char *name) {
-    if (path[0] == '.') {
+char *path_canonicalize(const char *path_og, char *buf) {
+    char path[PATH_MAX] = {};
+    strncpy(path, path_og, PATH_MAX);
+    char buf2[PATH_MAX] = {};
+    if (path[0] != '/') {
         char cwd[PATH_MAX] = {};
         getcwd(cwd, sizeof(cwd));
-        cwd[strlen(cwd)] = '/';
-        strncpy(name, cwd, PATH_MAX);
+        strncpy(buf2, cwd, PATH_MAX);
     }
-    strncpy(name + strlen(name), path, PATH_MAX - strlen(name));
-    char *next;
-    int l, w, first_dot;
-
-    for (next = name; *next && (*next != '.'); next++) {
-    }
-
-    l = w = first_dot = next - name;
-    while (name[l] != '\0') {
-        if (name[l] == '.' && (name[l + 1] == '/') &&
-            (l == 0 || (name[l - 1] == '/')))
-            l += 2;
-        else
-            name[w++] = name[l++];
+    char *token;
+    token = strtok(path, "/");
+    while (token != NULL) {
+        if (strcmp(token, ".") == 0 || token[0] == 0) {
+            token = strtok(NULL, "/");
+            continue;
+        }
+        int l = strlen(buf2);
+        buf2[l] = '/';
+        buf2[l + 1] = 0;
+        strncpy(buf2 + l + 1, token, PATH_MAX - l - 1);
+        token = strtok(NULL, "/");
     }
 
-    if (w == 1 && name[0] == '.')
-        w--;
-    else if (w > 1 && name[w - 1] == '.' && (name[w - 2] == '/'))
-        w--;
-    name[w] = '\0';
-
-    l = first_dot;
-
-    while (name[l] != '\0') {
-        if (name[l] == '.' && name[l + 1] == '.' && (name[l + 2] == '/') &&
-            (l == 0 || (name[l - 1] == '/'))) {
-            int m = l + 3, n;
-
-            l = l - 2;
-            if (l >= 0) {
-                while (l >= 0 && !(name[l] == '/')) l--;
-                l++;
-            } else
-                l = 0;
-            n = l;
-            while ((name[n] = name[m])) (++n, ++m);
-        } else
-            ++l;
+    int l = strlen(buf2);
+    int dotdot = 0;
+    for (int i = l - 1; i >= 0; i--) {
+        if (buf2[i] != '/') continue;
+        if (buf2[i + 1] == '.' && buf2[i + 2] == '.' &&
+            (buf2[i + 3] == 0 || buf2[i + 3] == '/')) {
+            buf2[i + 1] = 1;
+            dotdot++;
+        } else if (dotdot != 0) {
+            buf2[i + 1] = 1;
+            dotdot--;
+        }
     }
 
-    if (l == 2 && name[0] == '.' && name[1] == '.')
-        name[0] = '\0';
-    else if (l > 2 && name[l - 1] == '.' && name[l - 2] == '.' &&
-             (name[l - 3] == '/')) {
-        l = l - 4;
-        if (l >= 0) {
-            while (l >= 0 && !(name[l] == '/')) l--;
-            l++;
-        } else
-            l = 0;
-        name[l] = '\0';
+    if (dotdot != 0) {
+        errno = ENOENT;
+        return NULL;
     }
 
-    return name;
+    token = strtok(buf2, "/");
+    while (token != NULL) {
+        if (token[0] == 1) {
+            token = strtok(NULL, "/");
+            continue;
+        }
+        int l = strlen(buf);
+        buf[l] = '/';
+        buf[l + 1] = 0;
+        strncpy(buf + l + 1, token, PATH_MAX - l - 1);
+        token = strtok(NULL, "/");
+    }
+    buf[strlen(buf)] = '/';
+    buf[strlen(buf) + 1] = 0;
+    return buf;
 }
 
 static char *basedir = "/";
@@ -100,9 +95,15 @@ void print_bad_path(const char *fun, const char *path) {
 bool is_in_basedir(const char *path) {
     int basedir_len = strlen(basedir);
     int path_len = strlen(path);
-    if (path_len < basedir_len) return false;
+    if (path_len < basedir_len) {
+        errno = EACCES;
+        return false;
+    }
     for (int i = 0; i < basedir_len; i++) {
-        if (path[i] != basedir[i]) return false;
+        if (path[i] != basedir[i]) {
+            errno = EACCES;
+            return false;
+        }
     }
     return true;
 }
@@ -117,7 +118,7 @@ bool is_in_basedir(const char *path) {
             assert(old_##name != NULL);                               \
         }                                                             \
         char rpath[PATH_MAX] = {};                                    \
-        path_canonicalize(target, rpath);
+        if (path_canonicalize(target, rpath) == NULL) return r;
 
 #define HOOK_mid(name, ...)                       \
     if (is_in_basedir(rpath)) {                   \
@@ -139,8 +140,8 @@ bool is_in_basedir(const char *path) {
             assert(old_##name != NULL);                                        \
         }                                                                      \
         char rpath1[PATH_MAX] = {}, rpath2[PATH_MAX] = {};                     \
-        path_canonicalize(oldpath, rpath1);                                    \
-        path_canonicalize(newpath, rpath2);                                    \
+        if (path_canonicalize(oldpath, rpath1) == NULL) return -1;             \
+        if (path_canonicalize(newpath, rpath2) == NULL) return -1;             \
         bool bad = false;                                                      \
         if (!is_in_basedir(rpath1)) {                                          \
             print_bad_path(__func__, rpath1);                                  \
@@ -164,7 +165,7 @@ bool is_in_basedir(const char *path) {
             assert(old_##name != NULL);                                    \
         }                                                                  \
         char rpath[PATH_MAX] = {};                                         \
-        path_canonicalize(pathname, rpath);                                \
+        if (path_canonicalize(pathname, rpath) == NULL) return -1;         \
         if (!is_in_basedir(rpath)) {                                       \
             print_bad_path(__func__, rpath);                               \
             return -1;                                                     \
@@ -223,7 +224,7 @@ int __xstat(int ver, const char *path, struct stat *stat_buf) {
         assert(old___xstat != NULL);
     }
     char rpath[PATH_MAX] = {};
-    path_canonicalize(path, rpath);
+    if (path_canonicalize(path, rpath) == NULL) return -1;
     if (is_in_basedir(rpath)) return old___xstat(ver, path, stat_buf);
 
     print_bad_path(__func__, rpath);
@@ -240,7 +241,7 @@ int __xstat64(int ver, const char *path, struct stat *stat_buf) {
         assert(old___xstat64 != NULL);
     }
     char rpath[PATH_MAX] = {};
-    path_canonicalize(path, rpath);
+    if (path_canonicalize(path, rpath) == NULL) return -1;
     if (is_in_basedir(rpath)) return old___xstat64(ver, path, stat_buf);
 
     print_bad_path(__func__, rpath);
@@ -322,7 +323,7 @@ HOOK_OPEN(open64)
                                                                                \
         char rpath[PATH_MAX] = {};                                             \
                                                                                \
-        path_canonicalize(mod_path, rpath);                                    \
+        if (path_canonicalize(mod_path, rpath) == NULL) return -1;             \
         if (!is_in_basedir(rpath)) {                                           \
             print_bad_path(__func__, rpath);                                   \
             return -1;                                                         \
