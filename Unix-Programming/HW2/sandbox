@@ -1,28 +1,41 @@
-#!/usr/bin/env bash
-OPTIND=1
+#!/usr/bin/env python3
 
-SAND_PATH=./sandbox.so
-export BASE_DIR=./
+import sys
+import os
+import subprocess
 
-while getopts "p:d:" opt; do
-    case "$opt" in
-    p)  SAND_PATH=$OPTARG
-        ;;
-    d)  export BASE_DIR=$OPTARG
-        ;;
-    *)  echo "usage: ./sandbox [-p sopath] [-d basedir] [--] cmd [cmd args ...]"
-        echo "        -p: set the path to sandbox.so, default = ./sandbox.so"
-        echo "        -d: the base directory that is allowed to access, default = ."
-        echo "        --: seperate the arguments for sandbox and for the executed command"
-        exit 1
-    esac
-done
+os.environ["LD_PRELOAD"] = "./sandbox.so"
+os.environ['BASE_DIR'] = "./"
 
-shift $((OPTIND-1))
-[ "${1:-}" = "--" ] && shift
+command = []
 
-if [ -z "$1" ]; then
-    echo "no command given."
-else
-    LD_PRELOAD=$SAND_PATH "$@"
-fi
+idx = 1
+argc = len(sys.argv)
+while idx < argc:
+    s = sys.argv[idx]
+    if s.startswith("-"):
+        if s == "--":
+            command += sys.argv[idx+1:]
+            break
+        elif s == "-d" and idx + 1 < argc:
+            os.environ['BASE_DIR'] = sys.argv[idx+1]
+            idx += 1
+        elif s == "-p" and idx + 1 < argc:
+            os.environ["LD_PRELOAD"] = sys.argv[idx+1]
+            idx += 1
+        else:
+            print("./sandbox: invalid option -- '{}'".format(s[1:]))
+            print("usage: ./sandbox [-p sopath] [-d basedir] [--] cmd [cmd args ...]")
+            print("        -p: set the path to sandbox.so, default = ./sandbox.so")
+            print("        -d: the base directory that is allowed to access, default = .")
+            print("        --: seperate the arguments for sandbox and for the executed command")
+            exit(1)
+    else:
+        command.append(s)
+    idx += 1
+
+if len(command) == 0:
+    print("no command given.")
+    exit(1)
+
+subprocess.run(command, env=os.environ)
