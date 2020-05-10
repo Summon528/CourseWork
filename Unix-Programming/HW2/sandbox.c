@@ -92,6 +92,15 @@ void print_bad_path(const char *fun, const char *path) {
     write(ttyfd, buf, sizeof(buf));
 }
 
+void print_bad_path_with_dirfd(const char *fun, const char *path, int dirfd) {
+    char buf[256] = {};
+    snprintf(buf, sizeof(buf),
+             "[sandbox] %s: access to %s when dirfd=%d is not allowed\n", fun,
+             path, dirfd);
+    if (ttyfd == -1) opentty();
+    write(ttyfd, buf, sizeof(buf));
+}
+
 bool is_in_basedir(const char *path) {
     if (basedir == NULL) {
         basedir = getenv("BASE_DIR");
@@ -131,9 +140,9 @@ bool is_in_basedir(const char *path) {
         return old_##name(target, ##__VA_ARGS__); \
     };
 
-#define HOOK_end(r)                  \
-    print_bad_path(__func__, rpath); \
-    return r;                        \
+#define HOOK_end(r)                   \
+    print_bad_path(__func__, target); \
+    return r;                         \
     }
 
 #define HOOK_2(name)                                                           \
@@ -150,11 +159,11 @@ bool is_in_basedir(const char *path) {
         if (path_canonicalize(newpath, rpath2) == NULL) return -1;             \
         bool bad = false;                                                      \
         if (!is_in_basedir(rpath1)) {                                          \
-            print_bad_path(__func__, rpath1);                                  \
+            print_bad_path(__func__, oldpath);                                 \
             bad = true;                                                        \
         }                                                                      \
         if (!is_in_basedir(rpath2)) {                                          \
-            print_bad_path(__func__, rpath2);                                  \
+            print_bad_path(__func__, newpath);                                 \
             bad = true;                                                        \
         }                                                                      \
         if (bad) return -1;                                                    \
@@ -173,7 +182,7 @@ bool is_in_basedir(const char *path) {
         char rpath[PATH_MAX] = {};                                         \
         if (path_canonicalize(pathname, rpath) == NULL) return -1;         \
         if (!is_in_basedir(rpath)) {                                       \
-            print_bad_path(__func__, rpath);                               \
+            print_bad_path(__func__, pathname);                            \
             return -1;                                                     \
         }                                                                  \
                                                                            \
@@ -240,7 +249,7 @@ int __xstat(int ver, const char *path, struct stat *stat_buf) {
     if (path_canonicalize(path, rpath) == NULL) return -1;
     if (is_in_basedir(rpath)) return old___xstat(ver, path, stat_buf);
 
-    print_bad_path(__func__, rpath);
+    print_bad_path(__func__, path);
     return -1;
 }
 
@@ -257,7 +266,7 @@ int __xstat64(int ver, const char *path, struct stat *stat_buf) {
     if (path_canonicalize(path, rpath) == NULL) return -1;
     if (is_in_basedir(rpath)) return old___xstat64(ver, path, stat_buf);
 
-    print_bad_path(__func__, rpath);
+    print_bad_path(__func__, path);
     return -1;
 }
 
@@ -338,7 +347,7 @@ HOOK_OPEN(open64)
                                                                                \
         if (path_canonicalize(mod_path, rpath) == NULL) return -1;             \
         if (!is_in_basedir(rpath)) {                                           \
-            print_bad_path(__func__, rpath);                                   \
+            print_bad_path_with_dirfd(__func__, pathname, dirfd);              \
             return -1;                                                         \
         }                                                                      \
                                                                                \
