@@ -38,4 +38,4 @@ if len(command) == 0:
     print("no command given.")
     exit(1)
 
-subprocess.run(command, env=os.environ)
+os.execvpe(command[0], command, os.environ)
