@@ -16,7 +16,7 @@ _start:
         mov r9b, [0x600000 + r8d] ; read a char
         test r9b, r9b             ; test if it's the end of string
         je  end                   ; jump to the end if it is
-        or  r9b, 0b00100000       ; toupper case
+        or  r9b, 0b00100000       ; tolower case
         mov [0x600010 + r8d], r9b ; store result back
         inc r8d
         jmp go
