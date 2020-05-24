@@ -7,6 +7,7 @@ import glob
 import threading
 import concurrent.futures
 import sys
+import os
 
 MAX_WORKERS = 10
 
@@ -39,9 +40,7 @@ def worker(x):
 
 
 def get_pass():
-    # TODO: remove Realtek_YH1999
     words = [
-        "Realtek_YH1999",
         "YueHan",
         "Wang",
         "YH",
@@ -51,7 +50,6 @@ def get_pass():
         "Realtek",
         "@",
         "_",
-        " ",
     ]
     q = deque([""])
 
@@ -128,6 +126,7 @@ def trigger_payload(pw):
 
 def main():
     assert len(sys.argv) >= 2
+    os.chdir(os.path.dirname(os.path.realpath(__file__)))
     password = get_pass()
     print("=====")
     print("Password='{}'".format(password))
