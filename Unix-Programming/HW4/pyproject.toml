@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "hw4"
+version = "0.1.0"
+description = ""
+authors = ["Chang-Yen Tseng <cody880528@hotmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pwntools = "^4.1.0"
+capstone = "^4.0.2"
+
+[tool.poetry.dev-dependencies]
+black = "^19.10b0"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
